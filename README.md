@@ -64,4 +64,7 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
-# jorial_bpm
+# Jorial BPM
+For this project, the developer used Vue as a tool because it is a powerful combination of web development where Laravel (PHP backend) handles the logic, databases, and APIs, while Vue.js (JavaScript framework) creates a dynamic and reactive user interface.
+
+
