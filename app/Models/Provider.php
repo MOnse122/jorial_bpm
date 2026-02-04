@@ -14,9 +14,8 @@ class Provider extends Model
 
     protected $fillable = [
         'name',
-        'state',
         'plates',
-        'estatus',
+        'state',
     ];
 
     public $timestamps = true;

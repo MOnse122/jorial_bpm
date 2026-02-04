@@ -14,9 +14,8 @@ return new class extends Migration
         Schema::create('providers', function (Blueprint $table) {
             $table->bigIncrements('id_provider');
             $table->string('name');
-            $table->string('state');
             $table->string('plates');
-            $table->enum('estatus', ['ACTIVO', 'INACTIVO'])->default('ACTIVO');
+            $table->enum('state', ['ACTIVO', 'INACTIVO'])->default('ACTIVO');
             $table->timestamps();
         });
     }

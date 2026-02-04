@@ -4,6 +4,7 @@ use App\Http\Controllers\ProfileController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+use App\Http\Controllers\Providers\ProviderController;
 
 /*
 |--------------------------------------------------------------------------
@@ -29,10 +30,21 @@ Route::get('/dashboard', function () {
     return Inertia::render('Dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
+
+
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::patch('providers', [ProviderController::class, 'update'])->name('providers.update');
+
 });
+
+
+Route::middleware(['auth'])->group(function () {
+    Route::resource('providers', ProviderController::class);
+});
+
+
 
 require __DIR__.'/auth.php';
