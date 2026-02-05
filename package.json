@@ -9,12 +9,15 @@
         "@inertiajs/vue3": "^1.0.0",
         "@tailwindcss/forms": "^0.5.3",
         "@vitejs/plugin-vue": "^5.0.0",
-        "autoprefixer": "^10.4.12",
+        "autoprefixer": "^10.4.24",
         "axios": "^1.6.4",
         "laravel-vite-plugin": "^1.0.0",
-        "postcss": "^8.4.31",
-        "tailwindcss": "^3.2.1",
+        "postcss": "^8.5.6",
+        "tailwindcss": "^3.4.19",
         "vite": "^5.0.0",
         "vue": "^3.4.0"
+    },
+    "dependencies": {
+        "bootstrap": "^5.3.8"
     }
 }

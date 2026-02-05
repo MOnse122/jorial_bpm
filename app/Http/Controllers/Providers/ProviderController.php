@@ -27,7 +27,7 @@ class ProviderController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'plates' => 'required|string|min:6|max:10',
-            'state' => 'required|in:ACTIVO,INACTIVO',
+            'state' => 'required|in:NORMAL,SEVERA,REDUCIDA',
         ]);
 
         Provider::create([
@@ -57,7 +57,7 @@ class ProviderController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'plates' => 'required|string|min:6|max:10|regex:/^[A-Z0-9-]+$/',
-            'state' => 'required|in:ACTIVO,INACTIVO',
+            'state' => 'required|in:NORMAL,SEVERA,REDUCIDA',
         ]);
 
         $provider = Provider::findOrFail($id);

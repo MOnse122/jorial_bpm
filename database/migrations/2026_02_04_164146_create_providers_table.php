@@ -15,7 +15,7 @@ return new class extends Migration
             $table->bigIncrements('id_provider');
             $table->string('name');
             $table->string('plates');
-            $table->enum('state', ['ACTIVO', 'INACTIVO'])->default('ACTIVO');
+            $table->enum('state', ['NORMAL', 'REDUCIDA', 'SEVERA'])->default('NORMAL');
             $table->timestamps();
         });
     }

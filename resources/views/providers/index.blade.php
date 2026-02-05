@@ -45,11 +45,13 @@
             </div>
 
             <div>
-                <label>Estatus</label><br>
+                <label>Estado de proveedor</label><br>
                 <select name="state">
                     <option value="">-- Selecciona --</option>
-                    <option value="ACTIVO" {{ old('state') == 'ACTIVO' ? 'selected' : '' }}>ACTIVO</option>
-                    <option value="INACTIVO" {{ old('state') == 'INACTIVO' ? 'selected' : '' }}>INACTIVO</option>
+                    <option value="NORMAL" {{ old('state') == 'NORMAL' ? 'selected' : '' }}>NORMAL</option>
+                    <option value="REDUCIDO" {{ old('state') == 'REDUCIDO' ? 'selected' : '' }}>REDUCIDO</option>
+                    <option value="SEVERA" {{ old('state') == 'SEVERA' ? 'selected' : '' }}>SEVERA</option>
+
                 </select>
             </div>
 
@@ -68,7 +70,7 @@
                     <th>ID</th>
                     <th>Nombre</th>
                     <th>Placas</th>
-                    <th>Estatus</th>
+                    <th>Estado de proveedor</th>
                     <th>Acciones</th>
                 </tr>
             </thead>
@@ -128,10 +130,13 @@
                                                     <input type="text" name="plates" value="{{ $provider->plates }}">
                                                 </div>
                                                 <div>
-                                                    <label>Estatus</label>
+                                                    <label>Estado del proveedor</label>
                                                     <select name="state">
-                                                        <option value="ACTIVO" {{ $provider->state=='ACTIVO'?'selected':'' }}>ACTIVO</option>
-                                                        <option value="INACTIVO" {{ $provider->state=='INACTIVO'?'selected':'' }}>INACTIVO</option>
+                                                        <option value="NORMAL" {{ $provider->state=='NORMAL'?'selected':'' }}>NORMAL</option>
+                                                        
+                                                        <option value="REDUCIDA" {{ $provider->state=='REDUCIDA'?'selected':'' }}>REDUCIDA</option>
+
+                                                        <option value="SEVERA" {{ $provider->state=='SEVERA'?'selected':'' }}>SEVERA</option>
                                                     </select>
                                                 </div>
                                                 <button type="submit" class="btn btn-primary">Actualizar proveedor</button>
@@ -140,6 +145,7 @@
                                     </div>
                                 </div>
                             </div>
+                            
 
                         </td>
                         
