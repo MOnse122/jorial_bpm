@@ -1,7 +1,6 @@
 <script setup>
 import { ref } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
-import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 
 
 const sidebarOpen = ref(true)
@@ -71,7 +70,7 @@ function logout() {
                     @click="logout"
                     class="w-full text-left flex items-center px-4 py-2 text-red-600 hover:bg-red-50 no-underline"
                 >
-                    ➜]
+                    <i class="fa-solid fa-right-from-bracket"></i>
                     <span v-if="sidebarOpen" class="ml-3">Cerrar sesión</span>
                 </button>
             </nav>

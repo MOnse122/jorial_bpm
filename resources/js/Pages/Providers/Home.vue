@@ -108,6 +108,8 @@ const update = async () => {
   } catch (err) {
     console.error(err)
   }
+
+  await fetchProviders()
 }
 
 
