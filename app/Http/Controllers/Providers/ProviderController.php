@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Provider;
 use Illuminate\Http\Request;
 
+
 class ProviderController extends Controller
 {
     /**
@@ -13,10 +14,7 @@ class ProviderController extends Controller
      */
     public function index()
     {
-        $providers = Provider::all();
-        return view('providers.index', compact('providers'));
-
-   
+        return response()->json(Provider::all());
     }
 
     /**
@@ -36,7 +34,8 @@ class ProviderController extends Controller
             'state' => $request->state,
         ]);
 
-        return redirect()->route('providers.index')->with('success', 'Proveedor creado correctamente.');
+        return response ()->json(['message' => 'Proveedor creado correctamente.'], 201);
+
     }
 
     /**
@@ -46,6 +45,7 @@ class ProviderController extends Controller
     {
         $requestedProvider = Provider::findOrFail($id);
         return view('providers.show', compact('requestedProvider'));
+        
         
     }
 
@@ -67,7 +67,7 @@ class ProviderController extends Controller
             'state' => $request->state,
         ]);
 
-        return redirect()->route('providers.index')->with('success', 'Proveedor actualizado corractamente.');
+        return redirect()->route('providers.Home')->with('success', 'Proveedor actualizado corractamente.');
     }
 
     public function destroy(string $id)
@@ -75,6 +75,6 @@ class ProviderController extends Controller
         $provider = Provider::findOrFail($id);
         $provider->delete();
 
-        return redirect()->route('providers.index')->with('success', 'Proveedor eliminado correctamente.');
+        return redirect()->route('providers.Home')->with('success', 'Proveedor eliminado correctamente.');
     }
 }

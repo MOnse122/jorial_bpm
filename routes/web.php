@@ -5,6 +5,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Http\Controllers\Providers\ProviderController;
+use Illuminate\Validation\Rules\In;
 
 /*
 |--------------------------------------------------------------------------
@@ -39,10 +40,13 @@ Route::middleware('auth')->group(function () {
 
 });
 
+Route::get('/providers', function () {
+    return Inertia::render('Providers/Home');
+    })-> name ('providers.Home');
 
-Route::middleware(['auth'])->group(function () {
-    Route::resource('providers', ProviderController::class);
-});
+    
+
+
 
 
 
