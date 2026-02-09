@@ -28,13 +28,16 @@ class ProviderController extends Controller
             'state' => 'required|in:NORMAL,SEVERA,REDUCIDA',
         ]);
 
-        Provider::create([
+         $provider = Provider::create([
             'name' => $request->name,
             'plates' => $request->plates,
             'state' => $request->state,
         ]);
 
-        return response ()->json(['message' => 'Proveedor creado correctamente.'], 201);
+        return response()->json($provider, 201);
+
+
+
 
     }
 
@@ -56,25 +59,26 @@ class ProviderController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'plates' => 'required|string|min:6|max:10|regex:/^[A-Z0-9-]+$/',
+            'plates' => 'required|string|min:6|max:10',
             'state' => 'required|in:NORMAL,SEVERA,REDUCIDA',
         ]);
 
-        $provider = Provider::findOrFail($id);
-        $provider->update([
-            'name' => $request->name,
-            'plates' => $request->plates,
-            'state' => $request->state,
-        ]);
+       return response()->json([
+            'message' => 'Proveedor actualizado correctamente.',
+            'response' => Provider::findOrFail($id)->update([
+                'name' => $request->name,
+                'plates' => $request->plates,
+                'state' => $request->state,
+            ]), 200
+        ]); 
 
-        return redirect()->route('providers.Home')->with('success', 'Proveedor actualizado corractamente.');
     }
 
+  
     public function destroy(string $id)
     {
         $provider = Provider::findOrFail($id);
         $provider->delete();
 
-        return redirect()->route('providers.Home')->with('success', 'Proveedor eliminado correctamente.');
-    }
+        return response()->json(['message' => 'Proveedor eliminado correctamente.']);    }
 }

@@ -26,3 +26,4 @@ Route::get('/providers/{id}', [ProviderController::class, 'show']);
 Route::put('/providers/{id}', [ProviderController::class, 'update']);
 Route::delete('/providers/{id}', [ProviderController::class, 'destroy']);
 
+

@@ -26,22 +26,35 @@ const fetchProviders = async () => {
 
 const store = async () => {
   try {
-    const response = await fetch('http://localhost:8000/api/providers', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      },
-      body: JSON.stringify(form.value),
-    })
+    const response = await fetch(
+      'http://localhost:8000/api/providers',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify(form.value),
+      }
+    )
+
+    if (!response.ok) {
+      const error = await response.json()
+      console.error('Error 422:', error)
+      return
+    }
 
     const data = await response.json()
     providers.value.push(data)
+
     form.value = { name: '', plates: '', state: '' }
+
   } catch (err) {
     console.error(err)
   }
 }
+
+
 
 const destroy = async (id) => {
   try {
@@ -55,11 +68,13 @@ const destroy = async (id) => {
   } catch (err) {
     console.error(err)
   }
+    await fetchProviders()
+
 }
 
 const update = async () => {
   try {
-    await fetch(
+    const response = await fetch(
       `http://localhost:8000/api/providers/${editing.value.id_provider}`,
       {
         method: 'PUT',
@@ -67,20 +82,34 @@ const update = async () => {
           'Content-Type': 'application/json',
           Accept: 'application/json',
         },
-        body: JSON.stringify(editing.value),
+        body: JSON.stringify({
+          name: editing.value.name,
+          plates: editing.value.plates,
+          state: editing.value.state,
+        }),
       }
     )
 
+    if (!response.ok) {
+      const error = await response.json()
+      console.error('Error update 422:', error)
+      return
+    }
+
+    const data = await response.json()
+
     const index = providers.value.findIndex(
-      p => p.id_provider === editing.value.id_provider
+      p => p.id_provider === data.id_provider
     )
 
-    providers.value[index] = { ...editing.value }
+    providers.value[index] = data
     editing.value = null
+
   } catch (err) {
     console.error(err)
   }
 }
+
 
 onMounted(fetchProviders)
 </script>
@@ -133,7 +162,7 @@ onMounted(fetchProviders)
               >
                 <option disabled value="">Selecciona</option>
                 <option>NORMAL</option>
-                <option>REDUCIDO</option>
+                <option>REDUCIDA</option>
                 <option>SEVERA</option>
               </select>
             </div>
@@ -187,7 +216,7 @@ onMounted(fetchProviders)
                     class="badge"
                     :class="{
                       'bg-success': p.state === 'NORMAL',
-                      'bg-warning text-dark': p.state === 'REDUCIDO',
+                      'bg-warning text-dark': p.state === 'REDUCIDA',
                       'bg-danger': p.state === 'SEVERA'
                     }"
                   >
@@ -244,7 +273,7 @@ onMounted(fetchProviders)
                 <label class="form-label">Estado</label>
                 <select v-model="editing.state" class="form-select">
                   <option>NORMAL</option>
-                  <option>REDUCIDO</option>
+                  <option>REDUCIDA</option>
                   <option>SEVERA</option>
                 </select>
               </div>
