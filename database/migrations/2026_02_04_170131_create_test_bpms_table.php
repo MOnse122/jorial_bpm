@@ -26,6 +26,8 @@ return new class extends Migration
                 ->references('id_purchase_order')
                 ->on('purchase_order')
                 ->cascadeOnDelete();
+            $table->softDeletes();
+
 
         });
     }

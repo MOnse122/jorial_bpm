@@ -20,6 +20,8 @@ return new class extends Migration
             $table->unsignedBigInteger('id_user');
             $table->unsignedBigInteger('id_provider');
             $table->unsignedBigInteger('id_product');
+            $table->softDeletes();
+
 
             $table->timestamps();
 
@@ -37,6 +39,7 @@ return new class extends Migration
                 ->references('id_product')
                 ->on('products')
                 ->cascadeOnDelete();
+            
         });
 
     }

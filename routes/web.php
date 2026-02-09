@@ -4,6 +4,7 @@ use App\Http\Controllers\ProfileController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+
 use App\Http\Controllers\Providers\ProviderController;
 use Illuminate\Validation\Rules\In;
 
@@ -40,9 +41,15 @@ Route::middleware('auth')->group(function () {
 
 });
 
+Route::get('/purchases', function () {
+    return Inertia::render('Views/PurchaseOrder');
+    })-> name ('View.Purchases');
+
 Route::get('/providers', function () {
     return Inertia::render('Providers/Home');
     })-> name ('providers.Home');
+
+
 
     
 

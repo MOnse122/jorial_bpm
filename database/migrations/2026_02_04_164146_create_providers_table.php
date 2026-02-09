@@ -17,6 +17,8 @@ return new class extends Migration
             $table->string('plates');
             $table->enum('state', ['NORMAL', 'REDUCIDA', 'SEVERA'])->default('NORMAL');
             $table->timestamps();
+            $table->softDeletes();
+
         });
     }
 

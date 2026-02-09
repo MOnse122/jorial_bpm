@@ -24,6 +24,8 @@ return new class extends Migration
             $table->foreign('id_test_bpm')
                 ->references('id_test_bpm')
                 ->on('test_bpms');
+            $table->softDeletes();
+
                 
         });
     }

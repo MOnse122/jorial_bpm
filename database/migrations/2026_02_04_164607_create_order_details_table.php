@@ -38,6 +38,8 @@ return new class extends Migration
                 ->references('id_product')
                 ->on('products')
                 ->onDelete('restrict');
+            $table->softDeletes();
+
 
         });
     }

@@ -20,6 +20,8 @@ return new class extends Migration
             $table->foreign('id_purchase_order')->references('id_purchase_order')->on('purchase_order')->onDelete('cascade');
 
             $table->timestamps();
+            $table->softDeletes();
+
         });
     }
 

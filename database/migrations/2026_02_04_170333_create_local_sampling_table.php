@@ -31,6 +31,8 @@ return new class extends Migration
             $table->timestamps();
 
             $table->foreign('id_mil_std')->references('id_mil_std')->on('mil_stds')->onDelete('cascade');
+            $table->softDeletes();
+
         });
     }
 

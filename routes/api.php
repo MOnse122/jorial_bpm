@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Providers\ProviderController;
+use App\Http\Controllers\PurchaseOrder\PurchaseOrderController;
 
 /*
 |--------------------------------------------------------------------------
@@ -26,4 +27,10 @@ Route::get('/providers/{id}', [ProviderController::class, 'show']);
 Route::put('/providers/{id}', [ProviderController::class, 'update']);
 Route::delete('/providers/{id}', [ProviderController::class, 'destroy']);
 
+Route::get('/purchase-orders', [PurchaseOrderController::class, 'index']);
+Route::post('/purchase-orders', [PurchaseOrderController::class, 'store']);
+Route::get('/purchase-orders/{id}', [PurchaseOrderController::class, 'show']);
+Route::put('/purchase-orders/{id}', [PurchaseOrderController::class, 'update']);
+Route::delete('/purchase-orders/{id}', [PurchaseOrderController::class, 'destroy']);
 
+Route::get('/products', [App\Http\Controllers\Products\ProductsController::class, 'index']);
