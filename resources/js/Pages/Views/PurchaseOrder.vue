@@ -5,7 +5,6 @@
   const providers = ref([])
   const loading = ref(true)
 
-
   const form = ref({
     id: null,
     provider: '',
@@ -35,7 +34,9 @@
   }
   const fetchPurchaseOrder = async () => {
     try {
-      const response = await fetch(`http://localhost:8000/api/purchase-orders/${purchaseOrder.id}`)
+      const id = route.params.id
+
+      const response = await fetch(`http://localhost:8000/api/purchase-orders/${id}`)
       const data = await response.json()
       Object.assign(purchaseOrder, data)
     } catch (err) {
@@ -155,7 +156,7 @@
                 </button>
               </div>
             </div>
-
+            
           </div>
         </div>
 

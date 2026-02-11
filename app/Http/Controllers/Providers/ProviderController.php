@@ -28,6 +28,17 @@ class ProviderController extends Controller
             'state' => 'required|in:NORMAL,SEVERA,REDUCIDA',
         ]);
 
+        $existingProvider = Provider::where('plates', $request->plates)
+            ->orWhere(function ($query) use ($request) {
+                $query->where('name', $request->name)
+                      ->where('state', $request->state);
+            })
+            ->first();
+        if ($existingProvider) {
+            return response()->json(['message' => 'Ya existe este registro'], 409);
+        }
+
+
          $provider = Provider::create([
             'name' => $request->name,
             'plates' => $request->plates,
@@ -35,9 +46,6 @@ class ProviderController extends Controller
         ]);
 
         return response()->json($provider, 201);
-
-
-
 
     }
 
@@ -47,7 +55,7 @@ class ProviderController extends Controller
     public function show(string $id)
     {
         $requestedProvider = Provider::findOrFail($id);
-        return view('providers.show', compact('requestedProvider'));
+        return response()->json($requestedProvider);
         
         
     }
@@ -74,7 +82,6 @@ class ProviderController extends Controller
 
     }
 
-  
     public function destroy(string $id)
     {
         $provider = Provider::findOrFail($id);

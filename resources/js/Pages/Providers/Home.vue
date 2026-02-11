@@ -4,14 +4,71 @@ import AppLayout from '@/Layouts/AuthenticatedLayout.vue'
 
 const providers = ref([])
 const loading = ref(true)
-
+const errorMessage = ref('')
+const editing = ref(null)
+const errors = ref({})
+const success = ref('')
 const form = ref({
   name: '',
   plates: '',
   state: '',
 })
+const resetForm = () => {
+  form.value.name = ''
+  form.value.plates = ''
+  form.value.state = ''
+}
 
-const editing = ref(null)
+const store = async () => {
+  try {
+    errorMessage.value = ''
+    success.value = ''
+    errors.value = {}
+
+    const response = await fetch('http://localhost:8000/api/providers', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify(form.value),
+    })
+
+    const data = await response.json()
+
+    // 🔹 Validación Laravel (422)
+    if (response.status === 422) {
+      console.error('Numero de Placas incorrecto', data.errors)
+      errors.value = data.errors || {}
+      return
+    }
+
+    // 🔹 Registro duplicado (409)
+    if (response.status === 409) {
+      errorMessage.value = data.message
+      return
+    }
+
+    // 🔹 Otro error servidor
+    if (!response.ok) {
+      errorMessage.value = 'Error del servidor'
+      return
+    }
+
+    // 🔹 ÉXITO
+    success.value = 'Proveedor creado correctamente'
+    providers.value.push(data)
+
+    // Limpiar formulario correctamente
+    resetForm()
+
+    await fetchProviders()
+
+  } catch (e) {
+    errorMessage.value = 'Error de conexión con el servidor'
+  }
+}
+
 
 const fetchProviders = async () => {
   try {
@@ -23,38 +80,6 @@ const fetchProviders = async () => {
     loading.value = false
   }
 }
-
-const store = async () => {
-  try {
-    const response = await fetch(
-      'http://localhost:8000/api/providers',
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-        },
-        body: JSON.stringify(form.value),
-      }
-    )
-
-    if (!response.ok) {
-      const error = await response.json()
-      console.error('Error 422:', error)
-      return
-    }
-
-    const data = await response.json()
-    providers.value.push(data)
-
-    form.value = { name: '', plates: '', state: '' }
-
-  } catch (err) {
-    console.error(err)
-  }
-}
-
-
 
 const destroy = async (id) => {
   try {
@@ -150,10 +175,15 @@ onMounted(fetchProviders)
                 v-model="form.plates"
                 type="text"
                 class="form-control"
+                :class="{ 'is-invalid': errors.plates }"
                 placeholder="ABC-123"
-                required
               />
+
+              <div v-if="errors.plates" class="invalid-feedback">
+                {{ errors.plates[0] }}
+              </div>
             </div>
+
 
             <div class="col-md-4">
               <label class="form-label">Estado</label>
@@ -168,8 +198,16 @@ onMounted(fetchProviders)
                 <option>SEVERA</option>
               </select>
             </div>
+            <div v-if="errorMessage" class="alert alert-danger">
+              {{ errorMessage }}
+            </div>
+            <div v-if="success" class="alert alert-success">
+              {{ success }}
+            </div>
 
-            <div class="col-12 text-end">
+
+            <!-- BOTÓN -->
+            <div class="text-end">
               <button class="btn btn-primary">
                 <i class="bi bi-save"></i> Guardar
               </button>
