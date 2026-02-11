@@ -15,11 +15,12 @@ class Product extends Model
 
     protected $fillable = [
         'title',
+        'code',
         'description',
         'width',
         'height',
         'cal',
-        'estatus',
+        'state',
         'id_provider',
     ];
 
@@ -30,7 +31,7 @@ class Product extends Model
     {
         return $this->belongsTo(
             Provider::class, 
-            'id_product', 
+            'id_provider', 
         );
     }
 
@@ -38,7 +39,36 @@ class Product extends Model
     {
         return $this->hasMany(
             PurchaseOrder::class, 
-            'id_product', 
+            'id_purchase_order', 
         );
     }
+     
+    //SCOPES
+    public function scopeActive($query)
+    {
+        return $query->where('state', 'ACTIVO');
+    }
+
+    public function scopeInactive($query)
+    {
+        return $query->where('state', 'INACTIVO');
+    }
+
+    public function scopeSearch($query, $value = null)
+    {
+        if (!$value) return $query;
+
+        return $query->where(function ($q) use ($value) {
+            $q->where('title', 'like', "%{$value}%")
+            ->orWhere('code', 'like', "%{$value}%")
+            ->orWhere('description', 'like', "%{$value}%")
+            ->orWhere('width', 'like', "%{$value}%")
+            ->orWhere('height', 'like', "%{$value}%")
+            ->orWhere('cal', 'like', "%{$value}%")
+            ->orWhere('state', 'like', "%{$value}%");
+        });
+    }
+
+
+
 }

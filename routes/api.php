@@ -21,6 +21,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     
 });
 
+
 Route::get('/providers', [ProviderController::class, 'index']);
 Route::post('/providers', [ProviderController::class, 'store']);
 Route::get('/providers/{id}', [ProviderController::class, 'show']);
@@ -34,3 +35,4 @@ Route::put('/purchase-orders/{id}', [PurchaseOrderController::class, 'update']);
 Route::delete('/purchase-orders/{id}', [PurchaseOrderController::class, 'destroy']);
 
 Route::get('/products', [App\Http\Controllers\Products\ProductsController::class, 'index']);
+Route::get('/products/{id}', [App\Http\Controllers\Products\ProductsController::class, 'show']);

@@ -1,14 +1,25 @@
   <script setup>
   import AppLayout from '@/Layouts/AuthenticatedLayout.vue'
   import { ref, onMounted, watch } from 'vue'
+  import { usePage } from '@inertiajs/vue3'
 
+  const page = usePage()
+  const purchaseOrder = ref({})
   const providers = ref([])
   const loading = ref(true)
+  const pagination = ref({})
+  const filters = ref({
+
+    search: '',
+    state: '',
+    
+  })
 
   const form = ref({
-    id: null,
     provider: '',
     state: '',
+    code: '',
+    description: '',
     products: [ ],
     item: '',
     unit_measure: '',
@@ -21,30 +32,60 @@
     number: '',
   })
 
+  const products = ref([])
 
+
+const currentPage = ref(1)
 
   const fetchProducts = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/products')
-      const products = await response.json()
-      console.log(products)
-    } catch (err) {
-      console.error(err)
-    }
-  }
-  const fetchPurchaseOrder = async () => {
-    try {
-      const id = route.params.id
+      loading.value = true
 
-      const response = await fetch(`http://localhost:8000/api/purchase-orders/${id}`)
+      const params = new URLSearchParams({
+        search: filters.value.search,
+        state: filters.value.state,
+        page: currentPage.value
+      }).toString()
+
+      const response = await fetch(
+        `http://localhost:8000/api/products?${params}`
+      )
+
       const data = await response.json()
-      Object.assign(purchaseOrder, data)
+
+      products.value = data.data
+      pagination.value = data
+
     } catch (err) {
       console.error(err)
     } finally {
       loading.value = false
     }
   }
+
+  watch(filters, fetchProducts, { deep: true })
+
+  const fetchPurchaseOrder = async () => {
+    try {
+      const id = page.props.id
+
+      if (!id) return
+
+      const response = await fetch(
+        `http://localhost:8000/api/purchase-orders/${id}`
+      )
+
+      if (!response.ok) {
+        throw new Error('Error al obtener la orden')
+      }
+
+      purchaseOrder.value = await response.json()
+
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
 
   const fetchProviders = async () => {
     try {
@@ -147,7 +188,7 @@
 
               <div class="col-md-9">
                 <label class="form-label fw-bold">Ítem:</label>
-                <input type="text" class="form-control" placeholder="Buscar ítem" v-model="form.products">
+                <input type="text" class="form-control" placeholder="Buscar ítem" v-model="filters.search">
               </div>
 
               <div class="col-md-3 d-flex align-items-end">
@@ -163,28 +204,38 @@
 
         <div class="card mb-4">
           <div class="card-body p-0">
-
             <table class="table table-borderless mb-0">
               <thead class="table-light">
                 <tr class="text-center">
+                  <th>Título</th>
                   <th>Clave</th>
                   <th>Descripción</th>
-                  <th>Agregar</th>
+                  <th><i class="fa-jelly fa-regular fa-plus"></i></th>
                 </tr>
               </thead>
+
               <tbody class="text-center">
-                <tr>
-                  <td>----</td>
-                  <td>Descripción del producto</td>
-                  <td class="text-success fw-bold">+</td>
+                <tr v-for="product in products" :key="product.id_product">
+                  <td>{{ product.title }}</td>
+                  <td>{{ product.code }}</td>
+                  <td>{{ product.description }}</td>
+                  <td>
+                    <button>
+                      <i class="fa-jelly fa-regular fa-plus"></i>
+                    </button>
+                  </td>
                 </tr>
-                <tr>
-                  <td>----</td>
-                  <td>Descripción del producto</td>
-                  <td class="text-success fw-bold">+</td>
+
+                <!-- Opcional: mensaje si no hay productos -->
+                <tr v-if="products.length === 0">
+                  <td colspan="3" class="text-muted">
+                    No hay productos disponibles
+                  </td>
                 </tr>
               </tbody>
             </table>
+            
+
 
           </div>
         </div>

@@ -4,14 +4,24 @@ namespace App\Http\Controllers\Products;
 
 use App\Http\Controllers\Controller;
 use App\Models\Product;
+use Illuminate\Http\Request;
+
 
 class ProductsController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        return response()->json(Product::all());
-      
+        $search = $request->search;
+
+        $products = Product::query()
+            ->active()
+            ->search($search)
+            ->paginate(10);
+
+        return response()->json($products);
     }
+
+
     
     public function show(string $id)
     {
