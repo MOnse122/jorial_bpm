@@ -34,5 +34,6 @@ Route::get('/purchase-orders/{id}', [PurchaseOrderController::class, 'show']);
 Route::put('/purchase-orders/{id}', [PurchaseOrderController::class, 'update']);
 Route::delete('/purchase-orders/{id}', [PurchaseOrderController::class, 'destroy']);
 
+
 Route::get('/products', [App\Http\Controllers\Products\ProductsController::class, 'index']);
 Route::get('/products/{id}', [App\Http\Controllers\Products\ProductsController::class, 'show']);

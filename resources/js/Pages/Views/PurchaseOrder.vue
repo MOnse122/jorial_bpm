@@ -9,11 +9,21 @@
   const loading = ref(true)
   const pagination = ref({})
   const filters = ref({
-
     search: '',
     state: '',
     
   })
+  const unitMeasures = ref([
+    { value: 'mil', label: 'Millares' },
+    { value: 'kg', label: 'Kilogramos' },
+    { value: 'pz', label: 'Piezas' },
+  ])
+
+  const documentTypes = ref([
+    { value: 'FACTURA', label: 'Factura' },
+    { value: 'REMISION', label: 'Remisión' },
+    { value: 'OTRO', label: 'Otro' },
+  ])
 
   const form = ref({
     provider: '',
@@ -65,6 +75,7 @@ const currentPage = ref(1)
 
   watch(filters, fetchProducts, { deep: true })
 
+
   const fetchPurchaseOrder = async () => {
     try {
       const id = page.props.id
@@ -105,52 +116,56 @@ const currentPage = ref(1)
     }
   )
 
-
-
-  const destroy = async (id) => {
-    try {
-      await fetch(`http://localhost:8000/api/purchase-orders/${id}`, {
-        method: 'DELETE',
+  const addProduct = (product) => {
+    if (!form.value.products.find(p => p.id_product === product.id_product)) {
+      form.value.products.push({
+        id_product: product.id_product,
+        code: product.code,
+        description: product.description,
+        unit_measure: '',
+        bulk_or_roll_quantity: 0,
+        individual_quantity: 0,
+        document_number: '',
+        non_conformity: false,
+        lot: '',
+        document_type: '',
+        number: '',
       })
-
-      console.log('Orden de compra eliminada correctamente.')
-    } catch (err) {
-      console.error(err)
     }
+    console.log('Producto agregado:', product)
   }
 
-  const update = async (id) => {
+  onMounted(() => {
+    fetchProducts()
+    fetchProviders()
+    fetchPurchaseOrder()
+  })
+
+  const saveOrder = async () => {
     try {
       const response = await fetch(
-        `http://localhost:8000/api/purchase-orders/${id}`,
+        'http://localhost:8000/api/purchase-orders',
         {
-          method: 'PUT',
+          method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Accept: 'application/json',
           },
           body: JSON.stringify(form.value),
         }
       )
 
       if (!response.ok) {
-        const error = await response.json()
-        console.error('Error 422:', error)
-        return
+        throw new Error('Error al guardar la orden')
       }
 
       const data = await response.json()
-      console.log('Orden de compra actualizada:', data)
+      console.log('Orden creada:', data)
 
     } catch (err) {
       console.error(err)
     }
-  } 
-  onMounted(() => {
-    fetchProducts()
-    fetchProviders()
-    fetchPurchaseOrder()
-  })
+  }
+
 
   </script>
 
@@ -191,11 +206,7 @@ const currentPage = ref(1)
                 <input type="text" class="form-control" placeholder="Buscar ítem" v-model="filters.search">
               </div>
 
-              <div class="col-md-3 d-flex align-items-end">
-                <button class="btn btn-primary w-100">
-                  Buscar
-                </button>
-              </div>
+
             </div>
             
           </div>
@@ -220,9 +231,10 @@ const currentPage = ref(1)
                   <td>{{ product.code }}</td>
                   <td>{{ product.description }}</td>
                   <td>
-                    <button>
+                    <button class="btn btn-success" @click="addProduct(product)">
                       <i class="fa-jelly fa-regular fa-plus"></i>
                     </button>
+                    
                   </td>
                 </tr>
 
@@ -245,14 +257,13 @@ const currentPage = ref(1)
 
             <table class="table table-bordered mb-0 align-middle text-center">
               <thead style="background:#8bc34a;">
-                <tr>
+                <tr class="text-white" >
                   <th>Clave</th>
                   <th>Descripción</th>
                   <th>UOM</th>
                   <th>Cantidad<br>Bultos/Rollos</th>
                   <th>Cantidad<br>en piezas</th>
                   <th>Orden Pedido</th>
-                  <th>Orden Compra</th>
                   <th>No. Conformidad</th>
                   <th>Lote</th>
                   <th>Factura / Remisión</th>
@@ -261,26 +272,65 @@ const currentPage = ref(1)
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td>----</td>
-                  <td>Descripción larga del producto</td>
+                <tr v-for="item in form.products" :key="item.id_product">
+                  <td>{{ item.code }}</td>
+                  <td>{{ item.description }}</td>
                   <td>
-                    <select class="form-select form-select-sm">
-                      <option>UOM</option>
+                    <select class="form-select form-select-sm"
+                            v-model="item.unit_measure">
+
+                      <option value="">Seleccionar</option>
+
+                      <option 
+                        v-for="u in unitMeasures" 
+                        :key="u.value" 
+                        :value="u.value"
+                      >
+                        {{ u.label }}
+                      </option>
+
                     </select>
                   </td>
-                  <td>0</td>
-                  <td>0</td>
-                  <td>----</td>
-                  <td>----</td>
-                  <td>----</td>
-                  <td>----</td>
+                  <td>
+                    <label for="">
+                      <input type="number" class="form-control form-control-sm" v-model="item.bulk_or_roll_quantity">
+                    </label>
+                  </td>
+                  <td>
+                    <label for="">
+                      <input type="number" class="form-control form-control-sm" v-model="item.individual_quantity">
+                    </label>
+                  </td>
+                  <td>
+                    <label for="">
+                      <input type="text" class="form-control form-control-sm" v-model="item.document_number">
+                    </label>
+                  </td>
+                  <td>
+                    <label for="">
+                      <input type="checkbox" class="form-check-input" v-model="item.non_conformity">
+                    </label>
+                  </td>
+
+                  <td>
+                    <label for="">
+                      <input type="text" class="form-control form-control-sm" v-model="item.lot">
+                    </label>
+                  </td>
                   <td>
                     <select class="form-select form-select-sm">
                       <option>Seleccionar</option>
+                      <option v-for="d in documentTypes" :key="d.value" :value="d.value">
+                        {{ d.label }}
+                      </option>
+
                     </select>
                   </td>
-                  <td>----</td>
+                  <td>
+                    <label for="">
+                      <input type="text" class="form-control form-control-sm" v-model="item.number">
+                    </label>
+                  </td>
                   <td>
                     ✏️ 🗑️
                   </td>
@@ -296,7 +346,7 @@ const currentPage = ref(1)
           <button class="btn btn-danger px-4">
             Cancelar
           </button>
-          <button class="btn btn-success px-4">
+          <button class="btn btn-success px-4" @click="saveOrder">
             Siguiente
           </button>
         </div>

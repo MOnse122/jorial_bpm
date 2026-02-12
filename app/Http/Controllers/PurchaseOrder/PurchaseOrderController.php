@@ -5,6 +5,7 @@ namespace App\Http\Controllers\PurchaseOrder;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\PurchaseOrder;
+use App\Http\Resources\PurchaseOrderResource;
 
 class PurchaseOrderController extends Controller
 {
@@ -13,7 +14,8 @@ class PurchaseOrderController extends Controller
      */
     public function index()
     {
-        return response()->json(['message' => 'Listado de órdenes de compra']);
+        $purchaseOrders = PurchaseOrder::with(['provider', 'products', 'documents', 'orderDetails'])->get();
+        return PurchaseOrderResource::collection($purchaseOrders);
     }
 
     /**
@@ -22,32 +24,11 @@ class PurchaseOrderController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
-            'unit_measure' => 'required|string|max:255',
-            'bulk_or_roll_quantity' => 'required|integer',
-            'individual_quantity' => 'required|integer',
-            'document_number' => 'required|string|max:255',
-            'non_conformity' => 'required|boolean',
-            'lot' => 'required|string|max:255',
-            'document_type' => 'required|in:FACTURA,REMISION,OTRO',
-            'number' => 'required|string|max:255',
-            
-        ]);
-
-         $purchaseOrder = PurchaseOrder::create([
-            'unit_measure' => $request->unit_measure,
-            'bulk_or_roll_quantity' => $request->bulk_or_roll_quantity,
-            'individual_quantity' => $request->individual_quantity,
-            'document_number' => $request->document_number,
-            'non_conformity' => $request->non_conformity,
-            'lot' => $request->lot,
-            'document_type' => $request->document_type,
-            'number' => $request->number,
-
-        ]);
-        return response()->json($purchaseOrder, 201);
-    
-
+        return new PurchaseOrderResource(PurchaseOrder::create($request->all())
+        ->response
+        ->setStatusCode(201)
+        
+    );
     }
 
     /**
@@ -55,7 +36,9 @@ class PurchaseOrderController extends Controller
      */
     public function show(string $id)
     {
-        return response()->json(['message' => "Detalles de la orden de compra con ID: $id"]);
+        $purchaseOrder = PurchaseOrder::with(['provider', 'products', 'documents', 'orderDetails'])->findOrFail($id);
+        return new PurchaseOrderResource($purchaseOrder);
+
         
     }
 
@@ -65,30 +48,10 @@ class PurchaseOrderController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        $request->validate([
-            'unit_measure' => 'required|string|max:255',
-            'bulk_or_roll_quantity' => 'required|integer',
-            'individual_quantity' => 'required|integer',
-            'document_number' => 'required|string|max:255',
-            'non_conformity' => 'required|boolean',
-            'lot' => 'required|string|max:255',
-            'document_type' => 'required|in:FACTURA,REMISION,OTRO',
-            'number' => 'required|string|max:255',
-        ]);
-
         $purchaseOrder = PurchaseOrder::findOrFail($id);
-        $purchaseOrder->update([
-            'unit_measure' => $request->unit_measure,
-            'bulk_or_roll_quantity' => $request->bulk_or_roll_quantity,
-            'individual_quantity' => $request->individual_quantity,
-            'document_number' => $request->document_number,
-            'non_conformity' => $request->non_conformity,
-            'lot' => $request->lot,
-            'document_type' => $request->document_type,
-            'number' => $request->number,
-        ]);
+        $purchaseOrder->update($request->all());
 
-        return response()->json($purchaseOrder, 200);
+        return new PurchaseOrderResource($purchaseOrder);
     }
 
     /**
@@ -99,7 +62,31 @@ class PurchaseOrderController extends Controller
         $purchaseOrder = PurchaseOrder::findOrFail($id);
         $purchaseOrder->delete();
 
-        return response()->json(['message' => 'Orden de compra eliminada correctamente.']);
+        return response()->json(['message' => 'Orden de compra eliminada']);
+
+    }
+
+    public function validateArray(Request $request)
+    {
+        $request->validate([
+            'provider_id' => 'required|exists:providers,id_provider',
+            'order_number' => 'required|string',
+            'date' => 'required|date',
+
+            'details' => 'required|array|min:1',
+
+            'details.*.id_product' => 'required|exists:products,id_product',
+            'details.*.unit_measure' => 'required|string',
+            'details.*.bulk_or_roll_quantity' => 'required|integer',
+            'details.*.individual_quantity' => 'required|integer',
+            'details.*.lot' => 'required|string',
+            'details.*.document_type' => 'required|in:FACTURA,REMISION,OTRO',
+            'details.*.number' => 'required|string',
+            'details.*.non_conformity' => 'required|boolean',
+        ]);
+
+
+        return response()->json(['message' => 'Datos validados correctamente', 'data' =>  $request->all()]);
     }
     
 }

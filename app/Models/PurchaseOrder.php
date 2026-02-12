@@ -66,5 +66,15 @@ class PurchaseOrder extends Model
         );
     }
 
+    public function orderDetails()
+    {
+        return $this->hasMany(
+            OrderDetails::class, 
+            'id_purchase_order', 
+        );
+    }
+
+    
+
 
 }
