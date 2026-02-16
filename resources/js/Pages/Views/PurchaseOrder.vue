@@ -1,181 +1,172 @@
-  <script setup>
-  import AppLayout from '@/Layouts/AuthenticatedLayout.vue'
-  import { ref, onMounted, watch } from 'vue'
-  import { usePage } from '@inertiajs/vue3'
+<script setup>
+import AppLayout from '@/Layouts/AuthenticatedLayout.vue'
+import { ref, onMounted, watch } from 'vue'
+import { router } from '@inertiajs/vue3'
 
-  const page = usePage()
-  const purchaseOrder = ref({})
-  const providers = ref([])
-  const loading = ref(true)
-  const pagination = ref({})
-  const filters = ref({
-    search: '',
-    state: '',
-    
-  })
-  const unitMeasures = ref([
-    { value: 'mil', label: 'Millares' },
-    { value: 'kg', label: 'Kilogramos' },
-    { value: 'pz', label: 'Piezas' },
-  ])
+/* ============================= */
+/* FUNCION FECHA LOCAL */
+/* ============================= */
+const getTodayLocalDate = () => {
+  const today = new Date()
+  const offset = today.getTimezoneOffset()
+  today.setMinutes(today.getMinutes() - offset)
+  return today.toISOString().split('T')[0]
+}
+const goDashboard = () => {
+  window.location.href = '/dashboard'
+  console.log('Dashboard clicked')
+  console.log('Redirigiendo a /dashboard')
+}
 
-  const documentTypes = ref([
-    { value: 'FACTURA', label: 'Factura' },
-    { value: 'REMISION', label: 'Remisión' },
-    { value: 'OTRO', label: 'Otro' },
-  ])
-
-const form = ref({
-  date: '',
-  status: '',
-  id_provider: '',
-  id_product: '',
-  products: []
+const providers = ref([])
+const products = ref([])
+const loading = ref(false)
+const currentPage = ref(1)
+const pagination = ref({
+  total: 0,
+  per_page: 10,
+  current_page: 1,
+  last_page: 1,
 })
 
 
-  const products = ref([])
+const filters = ref({
+  search: ''
+})
+
+const unitMeasures = [
+  { value: 'mil', label: 'Millares' },
+  { value: 'kg', label: 'Kilogramos' },
+  { value: 'pz', label: 'Piezas' },
+]
+
+const documentTypes = [
+  { value: 'FACTURA', label: 'Factura' },
+  { value: 'REMISION', label: 'Remisión' },
+  { value: 'OTRO', label: 'Otro' },
+]
 
 
-const currentPage = ref(1)
+const form = ref({
+  date: getTodayLocalDate(),
+  status: 'PENDIENTE',
+  id_provider: '',
+  state: '',
+  products: []
+})
 
-  const fetchProducts = async () => {
-    try {
-      loading.value = true
+/* ============================= */
 
-      const params = new URLSearchParams({
-        search: filters.value.search,
-        state: filters.value.state,
-        page: currentPage.value
-      }).toString()
+const fetchProducts = async () => {
+  try {
+    loading.value = true
 
-      const response = await fetch(
-        `http://localhost:8000/api/products?${params}`
-      )
+    const params = new URLSearchParams({
+      search: filters.value.search,
+      state: filters.value.state,
+      page: currentPage.value
+    }).toString()
 
-      const data = await response.json()
+    const response = await fetch(
+      `http://localhost:8000/api/products?${params}`
+    )
 
-      products.value = data.data
-      pagination.value = data
+    const data = await response.json()
 
-    } catch (err) {
-      console.error(err)
-    } finally {
-      loading.value = false
-    }
+    products.value = data.data
+    pagination.value = data
+
+  } catch (err) {
+    console.error(err)
+  } finally {
+    loading.value = false
   }
+}
 
-  watch(filters, fetchProducts, { deep: true })
+watch(filters, fetchProducts, { deep: true })
 
-
-  const fetchPurchaseOrder = async () => {
-    try {
-      const id = page.props.id
-
-      if (!id) return
-
-      const response = await fetch(
-        `http://localhost:8000/api/purchase-order/${id}`
-      )
-
-      if (!response.ok) {
-        throw new Error('Error al obtener la orden')
-      }
-
-      purchaseOrder.value = await response.json()
-
-    } catch (err) {
-      console.error(err)
-    }
+const fetchProviders = async () => {
+  try {
+    const response = await fetch('http://localhost:8000/api/providers')
+    providers.value = await response.json()
+  } catch (err) {
+    console.error(err)
   }
+}
 
-
-  const fetchProviders = async () => {
-    try {
-      const response = await fetch('http://localhost:8000/api/providers')
-      const data = await response.json()
-      providers.value = data
-    } catch (err) {
-      console.error(err)
-    }
+watch(
+  () => form.value.id_provider,
+  (newProviderId) => {
+    const selected = providers.value.find(
+      p => p.id_provider == newProviderId
+    )
+    form.value.state = selected ? selected.state : ''
   }
-
-  watch(
-    () => form.value.id_provider,
-    (newProviderId) => {
-      const selected = providers.value.find(
-        p => p.id_provider === newProviderId
-      )
-      form.value.state = selected ? selected.state : ''
-    }
-  )
-
-  const addProduct = (product) => {
-    if (!form.value.products.find(p => p.id_product === product.id_product)) {
-      form.value.products.push({
-        id_product: product.id_product,
-        code: product.code,
-        description: product.description,
-        unit_measure: '',
-        bulk_or_roll_quantity: 0,
-        individual_quantity: 0,
-        document_number: '',
-        non_conformity: false,
-        lot: '',
-        id_document: '',
-        number: '',
-      })
-    }
-    console.log('Producto agregado:', product)
-  }
-
-  onMounted(() => {
-    fetchProducts()
-    fetchProviders()
-    fetchPurchaseOrder()
+)
+const addProduct = (product) => {
+  form.value.products.push({
+    uid: Date.now() + Math.random(), 
+    id_product: product.id_product,
+    code: product.code,
+    description: product.description,
+    unit_measure: '',
+    bulk_or_roll_quantity: 0,
+    individual_quantity: 0,
+    document_number: '',
+    non_conformity: false,
+    lot: '',
+    document_type: '',
+    number: '',
   })
+}
 
-  
+
+
+
+const removeProduct = (uid) => {
+  form.value.products = form.value.products.filter(
+    p => p.uid !== uid
+  )
+}
+
 
 const saveOrder = async () => {
-  try {
-    const response = await fetch('/api/purchase-order', {
+  const response = await fetch(
+    'http://localhost:8000/api/purchase-order',
+    {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json'
       },
       body: JSON.stringify(form.value),
-    })
-
-    const text = await response.text()
-    console.log("Respuesta cruda:", text)
-
-    if (!response.ok) {
-      throw new Error('Error al guardar la orden')
     }
-
-    const data = JSON.parse(text)
-    console.log('Orden creada:', data)
-
-  } catch (err) {
-    console.error(err)
-  }
-}
-console.log(JSON.stringify(form.value, null, 2))
-
- console.log("Datos enviados:", form.value)
-console.log("Payload real:")
-console.log(JSON.stringify(form.value, null, 2))
- 
-  console.log(form)
-  console.log("Productos en la orden:", form.value.products)
-
-const removeProduct = (id_product) => {
-  form.value.products = form.value.products.filter(
-    p => p.id_product !== id_product
   )
-  console.log('Producto removido, ID:', id_product)
+
+  if (!response.ok) {
+    const errorData = await response.json()
+    console.error(errorData)
+    throw new Error('Error al guardar la orden')
+  }
+
+  return await response.json()
+}
+
+
+
+onMounted(() => {
+  fetchProducts()
+  fetchProviders()
+})
+
+const goTest = async () => {
+  try {
+    const data = await saveOrder()
+    console.log("Orden guardada correctamente:", data)
+    router.visit(route('test'))
+  } catch (error) {
+    alert('No se pudo guardar la orden')
+  }
 }
 
 
@@ -183,199 +174,242 @@ const removeProduct = (id_product) => {
 
 </script>
 
-  <template>
-    <AppLayout>
-      <!-- HEADER -->
-      <template #header>
-        <h2 class="fw-bold fs-4 mb-0">
-          Detalles de la orden de pedido
-        </h2>
-      </template>
+<template>
+  <AppLayout>
+    <template #header>
+      <h2 class="fw-bold mb-0">Orden de Pedido</h2>
+    </template>
 
-        <div class="col-md-4">
-          <label class="form-label fw-bold">Fecha:</label>
-          <input type="date" class="form-control" v-model="form.date">
-        </div>
+    <div class="container-fluid py-3">
 
-        <div class="col-md-4">
-          <label class="form-label fw-bold">Estatus:</label>
-          <input type="text" class="form-control" v-model="form.status">
-        </div>
+      <!-- ================= INFO GENERAL ================= -->
+      <div class="card shadow-sm mb-3 compact-card">
+        <div class="card-body py-2">
+          <div class="row g-2 align-items-end">
 
-      <div class="container my-4">
-
-        <div class="card mb-4">
-          <div class="card-body">
-
-            <div class="row g-3 align-items-center">
-              <div class="col-md-6">
-                <label class="form-label fw-bold">Proveedor:</label>
-                <select class="form-select" v-model="form.id_provider">
-                  <option value="">Seleccionar proveedor</option>
-                  <option v-for="p in providers" :key="p.id_provider" :value="p.id_provider">
-                    {{ p.name }}
-                  </option>
-                </select>
-
-              </div>
-
-              <div class="col-md-6">
-                <label class="form-label fw-bold">Estado del proveedor:</label>
-                <span class="form-control">{{ form.state || 'N/A' }}</span>
-              </div>
-
-
-              <div class="col-md-9">
-                <label class="form-label fw-bold">Ítem:</label>
-                <input type="text" class="form-control" placeholder="Buscar ítem" v-model="filters.search">
-              </div>
-
-
+            <div class="col-md-2">
+              <label class="form-label small fw-bold">Fecha</label>
+              <input class="form-control form-control-sm bg-light" 
+                     :value="form.date" disabled>
             </div>
-            
-          </div>
-        </div>
-       
-        <div class="card mb-4">
-          <div class="card-body p-0">
-            <table class="table table-borderless mb-0">
-              <thead class="table-light">
-                <tr class="text-center">
-                  <th>Título</th>
-                  <th>Clave</th>
-                  <th>Descripción</th>
-                  <th><i class="fa-jelly fa-regular fa-plus"></i></th>
-                </tr>
-              </thead>
 
-              <tbody class="text-center">
-                <tr v-for="product in products" :key="product.id_product">
-                  <td>{{ product.title }}</td>
-                  <td>{{ product.code }}</td>
-                  <td>{{ product.description }}</td>
-                  <td>
-                    <button class="btn btn-success" @click="addProduct(product)">
-                      <i class="fa-jelly fa-regular fa-plus"></i>
-                    </button>
-                    
-                  </td>
-                </tr>
+            <div class="col-md-2">
+              <label class="form-label small fw-bold">Estatus</label>
+              <input class="form-control form-control-sm bg-light" 
+                     :value="form.status" disabled>
+            </div>
 
-                <!-- Opcional: mensaje si no hay productos -->
-                <tr v-if="products.length === 0">
-                  <td colspan="3" class="text-muted">
-                    No hay productos disponibles
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-            
+            <div class="col-md-3">
+              <label class="form-label small fw-bold">Proveedor</label>
+              <select class="form-select form-select-sm"
+                      v-model="form.id_provider">
+                <option value="">Seleccionar</option>
+                <option v-for="p in providers"
+                        :key="p.id_provider"
+                        :value="p.id_provider">
+                  {{ p.name }}
+                </option>
+              </select>
+            </div>
 
+            <div class="col-md-2">
+              <label class="form-label small fw-bold">Estado</label>
+              <input class="form-control form-control-sm bg-light"
+                     :value="form.state || 'N/A'"
+                     disabled>
+            </div>
 
           </div>
         </div>
-
-        <div class="card mb-4">
-          <div class="card-body p-0">
-
-            <table class="table table-bordered mb-0 align-middle text-center">
-              <thead style="background:#8bc34a;">
-                <tr class="text-white" >
-                  <th>Clave</th>
-                  <th>Descripción</th>
-                  <th>UOM</th>
-                  <th>Cantidad<br>Bultos/Rollos</th>
-                  <th>Cantidad<br>en piezas</th>
-                  <th>Orden Pedido</th>
-                  <th>No. Conformidad</th>
-                  <th>Lote</th>
-                  <th>Factura / Remisión</th>
-                  <th>No. F/R</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="item in form.products" :key="item.id_product">
-                  <td>{{ item.code }}</td>
-                  <td>{{ item.description }}</td>
-                  <td>
-                    <select class="form-select form-select-sm"
-                            v-model="item.unit_measure">
-
-                      <option value="">Seleccionar</option>
-
-                      <option 
-                        v-for="u in unitMeasures" 
-                        :key="u.value" 
-                        :value="u.value"
-                      >
-                        {{ u.label }}
-                      </option>
-
-                    </select>
-                  </td>
-                  <td>
-                    <label for="">
-                      <input type="number" class="form-control form-control-sm" v-model="item.bulk_or_roll_quantity">
-                    </label>
-                  </td>
-                  <td>
-                    <label for="">
-                      <input type="number" class="form-control form-control-sm" v-model="item.individual_quantity">
-                    </label>
-                  </td>
-                  <td>
-                    <label for="">
-                      <input type="text" class="form-control form-control-sm" v-model="item.document_number">
-                    </label>
-                  </td>
-                  <td>
-                    <label for="">
-                      <input type="checkbox" class="form-check-input" v-model="item.non_conformity">
-                    </label>
-                  </td>
-
-                  <td>
-                    <label for="">
-                      <input type="text" class="form-control form-control-sm" v-model="item.lot">
-                    </label>
-                  </td>
-                  <td>
-                    <select class="form-select form-select-sm">
-                      <option>Seleccionar</option>
-                      <option v-for="d in documentTypes" :key="d.value" :value="d.value">
-                        {{ d.label }}
-                      </option>
-
-                    </select>
-                  </td>
-                  <td>
-                    <label for="">
-                      <input type="text" class="form-control form-control-sm" v-model="item.number">
-                    </label>
-                  </td>
-                  <td>
-                    <button class="btn btn-sm btn-outline-danger" @click="removeProduct(item.id_product)">
-                    🗑️
-                    </button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-
-          </div>
-        </div>
-
-
-        <div class="d-flex justify-content-end gap-3">
-          <button class="btn btn-danger px-4">
-            Cancelar
-          </button>
-          <button class="btn btn-success px-4" @click="saveOrder">
-            Siguiente
-          </button>
-        </div>
-
       </div>
-    </AppLayout>
-  </template>
+
+      <!-- ================= BUSCADOR ================= -->
+      <div class="card shadow-sm mb-3 compact-card">
+        <div class="card-body py-2">
+          <label class="form-label small fw-bold">Buscar producto</label>
+          <input type="text"
+                 class="form-control form-control-sm"
+                 placeholder="Escribe para buscar..."
+                 v-model="filters.search">
+        </div>
+      </div>
+
+      <!-- ================= RESULTADOS ================= -->
+      <div class="card shadow-sm mb-3 compact-card">
+        <div class="card-body p-0">
+          <table class="table table-sm table-hover mb-0 text-center align-middle small">
+            <thead class="table-light">
+              <tr>
+                <th width="20%">Título</th>
+                <th width="15%">Clave</th>
+                <th width="45%">Descripción</th>
+                <th width="10%">Agregar</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="product in products" :key="product.id_product">
+                <td>{{ product.title }}</td>
+                <td>{{ product.code }}</td>
+                <td class="text-truncate">{{ product.description }}</td>
+                <td>
+                  <button class="btn btn-sm btn-success"
+                          @click="addProduct(product)">
+                    +
+                  </button>
+                </td>
+              </tr>
+
+              <tr v-if="products.length === 0">
+                <td colspan="4" class="text-muted py-2">
+                  No hay productos
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ================= PRODUCTOS AGREGADOS ================= -->
+      <div class="card shadow-sm mb-3 compact-card">
+        <div class="card-body p-0">
+
+          <table class="table table-sm table-bordered mb-0 text-center align-middle small">
+            <thead style="background:#2e7d32;" class="text-white">
+              <tr>
+                <th width="10%">Clave</th>
+                <th width="15%">Descripción</th>
+                <th width="10%">Unidad</th>
+                <th width="6%">Bultos</th>
+                <th width="6%">Pzas</th>
+                <th width="10%">Orden</th>
+                <th width="6%">NC</th>
+                <th width="8%">Lote</th>
+                <th width="10%">Tipo Doc</th>
+                <th width="10%">No Doc</th>
+                <th width="4%"></th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr v-for="item in form.products" :key="item.uid">
+                <td>{{ item.code }}</td>
+                <td class="text-truncate">{{ item.description }}</td>
+
+                <td>
+                  <select class="form-select form-select-sm compact-input"
+                          v-model="item.unit_measure">
+                    <option value="">-</option>
+                    <option v-for="u in unitMeasures"
+                            :key="u.value"
+                            :value="u.value">
+                      {{ u.label }}
+                    </option>
+                  </select>
+                </td>
+
+                <td>
+                  <input type="number"
+                         class="form-control form-control-sm compact-input"
+                         v-model="item.bulk_or_roll_quantity">
+                </td>
+
+                <td>
+                  <input type="number"
+                         class="form-control form-control-sm compact-input"
+                         v-model="item.individual_quantity">
+                </td>
+
+                <td>
+                  <input type="text"
+                         class="form-control form-control-sm compact-input"
+                         v-model="item.document_number">
+                </td>
+
+                <td>
+                  <input type="checkbox"
+                         class="form-check-input"
+                         v-model="item.non_conformity">
+                </td>
+
+                <td>
+                  <input type="text"
+                         class="form-control form-control-sm compact-input"
+                         v-model="item.lot">
+                </td>
+
+                <td>
+                  <select class="form-select form-select-sm compact-input"
+                          v-model="item.document_type">
+                    <option value="">-</option>
+                    <option v-for="d in documentTypes"
+                            :key="d.value"
+                            :value="d.value">
+                      {{ d.label }}
+                    </option>
+                  </select>
+                </td>
+
+                <td>
+                  <input type="text"
+                         class="form-control form-control-sm compact-input"
+                         v-model="item.number">
+                </td>
+
+                <td>
+                  <button class="btn btn-sm btn-outline-danger" @click="removeProduct(item.uid)">
+                    <i class="fa-solid fa-trash"></i>
+                  </button>
+                </td>
+              </tr>
+
+              <tr v-if="form.products.length === 0">
+                <td colspan="11" class="text-muted py-2">
+                  No hay productos agregados
+                </td>
+              </tr>
+            </tbody>
+
+          </table>
+        </div>
+      </div>
+      <!-- ================= BOTONES ================= -->
+      <div class="d-flex justify-content-end gap-2">
+        <button 
+          class="btn btn-outline-secondary btn-sm"
+          @click="goDashboard"
+        >
+          Cancelar
+        </button>
+
+        <button 
+          class="btn btn-success btn-sm"
+          @click="goTest"
+        >
+          Guardar orden
+        </button>
+      </div>
+
+    </div>
+  </AppLayout>
+</template>
+<style scoped>
+.compact-card {
+  border-radius: 8px;
+}
+
+.compact-input {
+  padding: 2px 4px !important;
+  font-size: 12px;
+}
+
+.table td,
+.table th {
+  padding: 6px !important;
+  font-size: 12px;
+}
+
+h2 {
+  font-size: 20px;
+}
+</style>
+

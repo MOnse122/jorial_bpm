@@ -5,8 +5,8 @@ use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
-use App\Http\Controllers\Providers\ProviderController;
-use Illuminate\Validation\Rules\In;
+use App\Http\Controllers\TestController;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -48,6 +48,19 @@ Route::get('/purchases', function () {
 Route::get('/providers', function () {
     return Inertia::render('Providers/Home');
     })-> name ('providers.Home');
+
+Route::get('/products', function () {
+    return Inertia::render('Products/Home');
+    })-> name ('products.Home');
+
+Route::get('/test', [TestController::class, 'index'])->name('test');
+Route::get('/test', function () {
+    return Inertia::render('Views/Test');
+})->name('test')
+
+
+;
+
 
 
 

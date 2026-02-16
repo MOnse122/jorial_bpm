@@ -143,53 +143,50 @@ onMounted(fetchProviders)
 <template>
   <AppLayout>
     <template #header>
-      <h2 class="fw-bold fs-4 mb-0">
-        Proveedores
-      </h2>
+      <h2 class="fw-bold mb-0">Proveedores</h2>
     </template>
 
-    <div class="container py-4">
+    <div class="container-fluid py-3">
 
-      <div class="card shadow-sm mb-5">
-        <div class="card-header bg-primary text-white">
-          <h5 class="mb-0">Nuevo proveedor</h5>
+      <!-- ================= NUEVO PROVEEDOR ================= -->
+      <div class="card shadow-sm mb-3 compact-card">
+        <div class="card-header bg-primary text-white py-2">
+          <h6 class="mb-0">Nuevo proveedor</h6>
         </div>
 
-        <div class="card-body">
-          <form @submit.prevent="store" class="row g-3">
+        <div class="card-body py-2">
+          <form @submit.prevent="store" class="row g-2 align-items-end small">
 
             <div class="col-md-4">
-              <label class="form-label">Nombre</label>
+              <label class="form-label small fw-bold">Nombre</label>
               <input
                 v-model="form.name"
                 type="text"
-                class="form-control"
+                class="form-control form-control-sm"
                 placeholder="Nombre del proveedor"
                 required
               />
             </div>
 
             <div class="col-md-4">
-              <label class="form-label">Placas</label>
+              <label class="form-label small fw-bold">Placas</label>
               <input
                 v-model="form.plates"
                 type="text"
-                class="form-control"
+                class="form-control form-control-sm"
                 :class="{ 'is-invalid': errors.plates }"
                 placeholder="ABC-123"
               />
-
               <div v-if="errors.plates" class="invalid-feedback">
                 {{ errors.plates[0] }}
               </div>
             </div>
 
-
-            <div class="col-md-4">
-              <label class="form-label">Estado</label>
+            <div class="col-md-3">
+              <label class="form-label small fw-bold">Estado</label>
               <select
                 v-model="form.state"
-                class="form-select"
+                class="form-select form-select-sm"
                 required
               >
                 <option disabled value="">Selecciona</option>
@@ -198,51 +195,52 @@ onMounted(fetchProviders)
                 <option>SEVERA</option>
               </select>
             </div>
-            <div v-if="errorMessage" class="alert alert-danger">
-              {{ errorMessage }}
-            </div>
-            <div v-if="success" class="alert alert-success">
-              {{ success }}
-            </div>
 
-
-            <!-- BOTÓN -->
-            <div class="text-end">
-              <button class="btn btn-primary">
-                <i class="bi bi-save"></i> Guardar
+            <div class="col-md-1 text-end">
+              <button class="btn btn-primary btn-sm">
+                Guardar
               </button>
             </div>
 
           </form>
+
+          <div v-if="errorMessage" class="alert alert-danger mt-2 py-1 small">
+            {{ errorMessage }}
+          </div>
+
+          <div v-if="success" class="alert alert-success mt-2 py-1 small">
+            {{ success }}
+          </div>
         </div>
       </div>
 
-      <div class="card shadow-sm">
-        <div class="card-header bg-dark text-white">
-          <h5 class="mb-0">Listado de proveedores</h5>
+      <!-- ================= LISTADO ================= -->
+      <div class="card shadow-sm compact-card">
+        <div class="card-header bg-dark text-white py-2">
+          <h6 class="mb-0">Listado de proveedores</h6>
         </div>
 
-        <div class="table-responsive">
-          <table class="table table-hover align-middle mb-0">
+        <div class="card-body p-0">
+          <table class="table table-sm table-hover mb-0 text-center align-middle small">
             <thead class="table-light">
               <tr>
-                <th>ID</th>
-                <th>Nombre</th>
-                <th>Placas</th>
-                <th>Estado</th>
-                <th class="text-center">Acciones</th>
+                <th width="10%">ID</th>
+                <th width="25%">Nombre</th>
+                <th width="20%">Placas</th>
+                <th width="20%">Estado</th>
+                <th width="25%">Acciones</th>
               </tr>
             </thead>
 
             <tbody>
               <tr v-if="loading">
-                <td colspan="5" class="text-center py-4">
-                  <div class="spinner-border text-primary"></div>
+                <td colspan="5" class="py-3">
+                  <div class="spinner-border spinner-border-sm text-primary"></div>
                 </td>
               </tr>
 
               <tr v-else-if="providers.length === 0">
-                <td colspan="5" class="text-center text-muted py-4">
+                <td colspan="5" class="text-muted py-2">
                   No hay proveedores registrados
                 </td>
               </tr>
@@ -253,7 +251,7 @@ onMounted(fetchProviders)
                 <td>{{ p.plates }}</td>
                 <td>
                   <span
-                    class="badge"
+                    class="badge small"
                     :class="{
                       'bg-success': p.state === 'NORMAL',
                       'bg-warning text-dark': p.state === 'REDUCIDA',
@@ -263,9 +261,9 @@ onMounted(fetchProviders)
                     {{ p.state }}
                   </span>
                 </td>
-                <td class="text-center">
+                <td>
                   <button
-                    class="btn btn-sm btn-outline-primary me-2"
+                    class="btn btn-sm btn-outline-primary me-1"
                     @click="editing = { ...p }"
                   >
                     Editar
@@ -279,39 +277,39 @@ onMounted(fetchProviders)
                 </td>
               </tr>
             </tbody>
-
           </table>
         </div>
       </div>
 
+      <!-- ================= MODAL ================= -->
       <div
         class="modal fade show d-block"
         v-if="editing"
         tabindex="-1"
         style="background: rgba(0,0,0,.5)"
       >
-        <div class="modal-dialog">
-          <div class="modal-content">
+        <div class="modal-dialog modal-sm">
+          <div class="modal-content compact-card">
 
-            <div class="modal-header">
-              <h5 class="modal-title">Editar proveedor</h5>
-              <button class="btn-close" @click="editing = null"></button>
+            <div class="modal-header py-2">
+              <h6 class="modal-title">Editar proveedor</h6>
+              <button class="btn-close btn-sm" @click="editing = null"></button>
             </div>
 
-            <div class="modal-body">
-              <div class="mb-3">
-                <label class="form-label">Nombre</label>
-                <input v-model="editing.name" class="form-control" />
+            <div class="modal-body small">
+              <div class="mb-2">
+                <label class="form-label small fw-bold">Nombre</label>
+                <input v-model="editing.name" class="form-control form-control-sm" />
               </div>
 
-              <div class="mb-3">
-                <label class="form-label">Placas</label>
-                <input v-model="editing.plates" class="form-control" />
+              <div class="mb-2">
+                <label class="form-label small fw-bold">Placas</label>
+                <input v-model="editing.plates" class="form-control form-control-sm" />
               </div>
 
-              <div class="mb-3">
-                <label class="form-label">Estado</label>
-                <select v-model="editing.state" class="form-select">
+              <div class="mb-2">
+                <label class="form-label small fw-bold">Estado</label>
+                <select v-model="editing.state" class="form-select form-select-sm">
                   <option>NORMAL</option>
                   <option>REDUCIDA</option>
                   <option>SEVERA</option>
@@ -319,11 +317,11 @@ onMounted(fetchProviders)
               </div>
             </div>
 
-            <div class="modal-footer">
-              <button class="btn btn-secondary" @click="editing = null">
+            <div class="modal-footer py-2">
+              <button class="btn btn-secondary btn-sm" @click="editing = null">
                 Cancelar
               </button>
-              <button class="btn btn-success" @click="update">
+              <button class="btn btn-success btn-sm" @click="update">
                 Actualizar
               </button>
             </div>
@@ -335,4 +333,5 @@ onMounted(fetchProviders)
     </div>
   </AppLayout>
 </template>
+
  

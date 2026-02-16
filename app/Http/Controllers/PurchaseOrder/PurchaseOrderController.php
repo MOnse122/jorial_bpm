@@ -32,7 +32,7 @@ class PurchaseOrderController extends Controller
     {
         $request->validate([
             'date' => 'required|date',
-            'status' => 'required|in:OPEN,CLOSED,CANCELLED',
+            'status' => 'required|in:PENDIENTE,COMPLETADA,CANCELADA',
             'id_provider' => 'required|exists:providers,id_provider',
             'products' => 'required|array|min:1',
             'products.*.id_product' => 'required|exists:products,id_product',
@@ -64,6 +64,8 @@ class PurchaseOrderController extends Controller
         return (new PurchaseOrderResource(
             $purchaseOrder->load(['provider','orderDetails.product'])
         ))->response()->setStatusCode(201);
+
+        
     }
 
 

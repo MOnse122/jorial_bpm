@@ -16,7 +16,7 @@ class ProductsController extends Controller
         $products = Product::query()
             ->active()
             ->search($search)
-            ->paginate(10);
+            ->paginate(5);
 
         return response()->json($products);
     }
