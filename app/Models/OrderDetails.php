@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\PurchaseOrder;
+
 
 class OrderDetails extends Model
 {
@@ -19,6 +21,8 @@ class OrderDetails extends Model
         'individual_quantity',
         'non_conformity',
         'document_number',
+        'id_document',
+        'id_product',
     ];
     protected $casts = [
         'non_conformity' => 'boolean',
@@ -30,10 +34,16 @@ class OrderDetails extends Model
             PurchaseOrder::class, 
             'id_purchase_order');
     }
-
     public function product()
     {
-        return $this->belongsTo(Product::class, 'id_product');
+        return $this->belongsTo(
+            Product::class,
+            'id_product',
+            'id_product'
+        );
     }
+
+        
+
 
 }

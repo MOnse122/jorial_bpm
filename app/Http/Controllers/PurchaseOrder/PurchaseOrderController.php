@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\PurchaseOrder;
 use App\Http\Resources\PurchaseOrderResource;
+use App\Models\OrderDetails;
 
 class PurchaseOrderController extends Controller
 {
@@ -14,9 +15,14 @@ class PurchaseOrderController extends Controller
      */
     public function index()
     {
-        $purchaseOrders = PurchaseOrder::with(['provider', 'products', 'documents', 'orderDetails'])->get();
-        return PurchaseOrderResource::collection($purchaseOrders);
+        $purchaseOrder = PurchaseOrder::with([
+            'provider',
+            'orderDetails.product'
+        ])->get();
+
+        return PurchaseOrderResource::collection($purchaseOrder);
     }
+
 
     /**
      * Show the form for creating a new resource.
@@ -24,23 +30,58 @@ class PurchaseOrderController extends Controller
 
     public function store(Request $request)
     {
-        return new PurchaseOrderResource(PurchaseOrder::create($request->all())
-        ->response
-        ->setStatusCode(201)
-        
-    );
+        $request->validate([
+            'date' => 'required|date',
+            'status' => 'required|in:OPEN,CLOSED,CANCELLED',
+            'id_provider' => 'required|exists:providers,id_provider',
+            'products' => 'required|array|min:1',
+            'products.*.id_product' => 'required|exists:products,id_product',
+        ]);
+
+        $folio = 'PO-' . time();
+
+        $purchaseOrder = PurchaseOrder::create([
+            'folio' => $folio,
+            'date' => $request->date,
+            'status' => $request->status,
+            'id_provider' => $request->id_provider,
+        ]);
+
+        foreach ($request->products as $product) {
+            OrderDetails::create([
+                'id_purchase_order' => $purchaseOrder->id_purchase_order,
+                'id_product' => $product['id_product'],
+                'unit_measure' => $product['unit_measure'] ?? null,
+                'bulk_or_roll_quantity' => $product['bulk_or_roll_quantity'] ?? 0,
+                'individual_quantity' => $product['individual_quantity'] ?? 0,
+                'lot' => $product['lot'] ?? null,
+                'document_type' => $product['document_type'] ?? null,
+                'number' => $product['number'] ?? null,
+                'non_conformity' => $product['non_conformity'] ?? false,
+            ]);
+        }
+
+        return (new PurchaseOrderResource(
+            $purchaseOrder->load(['provider','orderDetails.product'])
+        ))->response()->setStatusCode(201);
     }
+
+
+
 
     /**
      * Display the specified resource.
      */
     public function show(string $id)
     {
-        $purchaseOrder = PurchaseOrder::with(['provider', 'products', 'documents', 'orderDetails'])->findOrFail($id);
-        return new PurchaseOrderResource($purchaseOrder);
+        $purchaseOrder = PurchaseOrder::with([
+            'provider',
+            'orderDetails.product'
+        ])->findOrFail($id);
 
-        
+        return new PurchaseOrderResource($purchaseOrder);
     }
+
 
 
     /**

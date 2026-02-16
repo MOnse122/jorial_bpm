@@ -21,21 +21,13 @@ class Product extends Model
         'height',
         'cal',
         'state',
-        'id_provider',
     ];
 
 
     public $timestamps = true;
-    
-    public function provider()
-    {
-        return $this->belongsTo(
-            Provider::class, 
-            'id_provider', 
-        );
-    }
 
-    public function purchaseOrders()
+
+    public function purchaseOrder()
     {
         return $this->hasMany(
             PurchaseOrder::class, 

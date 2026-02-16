@@ -25,22 +25,14 @@
     { value: 'OTRO', label: 'Otro' },
   ])
 
-  const form = ref({
-    provider: '',
-    state: '',
-    code: '',
-    description: '',
-    products: [ ],
-    item: '',
-    unit_measure: '',
-    bulk_or_roll_quantity: 0,
-    individual_quantity: 0,
-    document_number: '',
-    non_conformity: false,
-    lot: '',  
-    document_type: '',
-    number: '',
-  })
+const form = ref({
+  date: '',
+  status: '',
+  id_provider: '',
+  id_product: '',
+  products: []
+})
+
 
   const products = ref([])
 
@@ -83,7 +75,7 @@ const currentPage = ref(1)
       if (!id) return
 
       const response = await fetch(
-        `http://localhost:8000/api/purchase-orders/${id}`
+        `http://localhost:8000/api/purchase-order/${id}`
       )
 
       if (!response.ok) {
@@ -109,9 +101,11 @@ const currentPage = ref(1)
   }
 
   watch(
-    () => form.value.provider,
+    () => form.value.id_provider,
     (newProviderId) => {
-      const selected = providers.value.find(p => p.id_provider === newProviderId)
+      const selected = providers.value.find(
+        p => p.id_provider === newProviderId
+      )
       form.value.state = selected ? selected.state : ''
     }
   )
@@ -128,7 +122,7 @@ const currentPage = ref(1)
         document_number: '',
         non_conformity: false,
         lot: '',
-        document_type: '',
+        id_document: '',
         number: '',
       })
     }
@@ -141,33 +135,53 @@ const currentPage = ref(1)
     fetchPurchaseOrder()
   })
 
-  const saveOrder = async () => {
-    try {
-      const response = await fetch(
-        'http://localhost:8000/api/purchase-orders',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(form.value),
-        }
-      )
+  
 
-      if (!response.ok) {
-        throw new Error('Error al guardar la orden')
-      }
+const saveOrder = async () => {
+  try {
+    const response = await fetch('/api/purchase-order', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify(form.value),
+    })
 
-      const data = await response.json()
-      console.log('Orden creada:', data)
+    const text = await response.text()
+    console.log("Respuesta cruda:", text)
 
-    } catch (err) {
-      console.error(err)
+    if (!response.ok) {
+      throw new Error('Error al guardar la orden')
     }
+
+    const data = JSON.parse(text)
+    console.log('Orden creada:', data)
+
+  } catch (err) {
+    console.error(err)
   }
+}
+console.log(JSON.stringify(form.value, null, 2))
+
+ console.log("Datos enviados:", form.value)
+console.log("Payload real:")
+console.log(JSON.stringify(form.value, null, 2))
+ 
+  console.log(form)
+  console.log("Productos en la orden:", form.value.products)
+
+const removeProduct = (id_product) => {
+  form.value.products = form.value.products.filter(
+    p => p.id_product !== id_product
+  )
+  console.log('Producto removido, ID:', id_product)
+}
 
 
-  </script>
+
+
+</script>
 
   <template>
     <AppLayout>
@@ -178,6 +192,16 @@ const currentPage = ref(1)
         </h2>
       </template>
 
+        <div class="col-md-4">
+          <label class="form-label fw-bold">Fecha:</label>
+          <input type="date" class="form-control" v-model="form.date">
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label fw-bold">Estatus:</label>
+          <input type="text" class="form-control" v-model="form.status">
+        </div>
+
       <div class="container my-4">
 
         <div class="card mb-4">
@@ -186,7 +210,7 @@ const currentPage = ref(1)
             <div class="row g-3 align-items-center">
               <div class="col-md-6">
                 <label class="form-label fw-bold">Proveedor:</label>
-                <select class="form-select" v-model="form.provider">
+                <select class="form-select" v-model="form.id_provider">
                   <option value="">Seleccionar proveedor</option>
                   <option v-for="p in providers" :key="p.id_provider" :value="p.id_provider">
                     {{ p.name }}
@@ -211,8 +235,7 @@ const currentPage = ref(1)
             
           </div>
         </div>
-
-
+       
         <div class="card mb-4">
           <div class="card-body p-0">
             <table class="table table-borderless mb-0">
@@ -332,7 +355,9 @@ const currentPage = ref(1)
                     </label>
                   </td>
                   <td>
-                    ✏️ 🗑️
+                    <button class="btn btn-sm btn-outline-danger" @click="removeProduct(item.id_product)">
+                    🗑️
+                    </button>
                   </td>
                 </tr>
               </tbody>

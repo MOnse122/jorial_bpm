@@ -15,8 +15,9 @@ return new class extends Migration
             $table->bigIncrements('id_order_detail');
 
             $table->unsignedBigInteger('id_purchase_order');
-            $table->unsignedBigInteger('id_product');
             $table->unsignedBigInteger('id_document')->nullable();
+            $table->unsignedBigInteger('id_product');
+
 
 
             $table->string('lot', 50)->nullable();
@@ -26,6 +27,7 @@ return new class extends Migration
             $table->integer('individual_quantity');
 
             $table->boolean('non_conformity')->default(false);
+            $table->softDeletes();
 
 
             $table->timestamps();
@@ -38,8 +40,8 @@ return new class extends Migration
             $table->foreign('id_product')
                 ->references('id_product')
                 ->on('products')
-                ->onDelete('restrict');
-            $table->softDeletes();
+                ->cascadeOnDelete();
+
             
             $table->foreign('id_document')
                 ->references('id_document')

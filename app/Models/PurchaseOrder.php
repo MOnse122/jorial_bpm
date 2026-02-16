@@ -10,13 +10,16 @@ class PurchaseOrder extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $table = 'purchase_orders';
+    protected $table = 'purchase_order';
     protected $primaryKey = 'id_purchase_order';
 
     protected $fillable = [
         'folio',
         'date',
         'status',
+        'id_provider',
+        'id_product',
+        'id_user',
     ];
 
     protected $casts = [
@@ -54,7 +57,7 @@ class PurchaseOrder extends Model
     {
         return $this->hasMany(
             CheckBpm::class, 
-            'id_check_bpm', 
+            'id_purchase_order', 
         );
     }
 
@@ -62,7 +65,7 @@ class PurchaseOrder extends Model
     {
         return $this->hasMany(
             Documents::class, 
-            'id_document', 
+            'id_purchase_order', 
         );
     }
 

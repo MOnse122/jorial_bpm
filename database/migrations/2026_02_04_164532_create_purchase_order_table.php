@@ -17,28 +17,18 @@ return new class extends Migration
             $table->date('date');
             $table->enum('status', ['OPEN', 'CLOSED', 'CANCELLED']);
 
-            $table->unsignedBigInteger('id_user');
             $table->unsignedBigInteger('id_provider');
-            $table->unsignedBigInteger('id_product');
             $table->softDeletes();
 
 
             $table->timestamps();
 
-            $table->foreign('id_user')
-                ->references('id')
-                ->on('users')
-                ->cascadeOnDelete();
 
             $table->foreign('id_provider')
                 ->references('id_provider')
                 ->on('providers')
                 ->cascadeOnDelete();
 
-            $table->foreign('id_product')
-                ->references('id_product')
-                ->on('products')
-                ->cascadeOnDelete();
             
         });
 

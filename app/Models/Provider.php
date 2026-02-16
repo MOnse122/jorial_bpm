@@ -21,7 +21,7 @@ class Provider extends Model
 
     public $timestamps = true;
 
-    public function purchaseOrders()
+    public function purchaseOrder()
     {
         return $this->hasMany(
             PurchaseOrder::class, 

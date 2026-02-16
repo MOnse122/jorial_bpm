@@ -20,8 +20,7 @@ return new class extends Migration
             $table->decimal('height', 5, 2);
             $table->decimal('cal', 5, 2);
             $table->enum('state', ['ACTIVO', 'INACTIVO'])->default('ACTIVO');
-            $table->unsignedBigInteger('id_provider');
-            $table->foreign('id_provider')->references('id_provider')->on('providers');            
+      
             $table->timestamps();
             $table->softDeletes();
 
