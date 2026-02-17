@@ -29,55 +29,34 @@ class PurchaseOrder extends Model
 
     public $timestamps = true;
 
+    // Relación con usuario
     public function user()
     {
-        return $this->belongsTo(
-            User::class, 
-            'id_user', 
-        );
+        return $this->belongsTo(User::class, 'id_user');
     }
 
+    // Relación con proveedor
     public function provider()
     {
-        return $this->belongsTo(
-            Provider::class, 
-            'id_provider', 
-        );
+        return $this->belongsTo(Provider::class, 'id_provider');
     }
 
-    public function product()
-    {
-        return $this->belongsTo(
-            Product::class, 
-            'id_product', 
-        );
-    }
-
-    public function checkBpm()
-    {
-        return $this->hasMany(
-            CheckBpm::class, 
-            'id_purchase_order', 
-        );
-    }
-
-    public function documents()
-    {
-        return $this->hasMany(
-            Documents::class, 
-            'id_purchase_order', 
-        );
-    }
-
+    // Relación con productos de la orden
     public function orderDetails()
     {
-        return $this->hasMany(
-            OrderDetails::class, 
-            'id_purchase_order', 
-        );
+        return $this->hasMany(OrderDetails::class, 'id_purchase_order');
     }
 
-    
+    // Relación con documentos
+    public function documents()
+    {
+        return $this->hasMany(Documents::class, 'id_purchase_order');
+    }
 
+    // Relación con BPM
+    public function checkBpm()
+    {
+        return $this->hasMany(CheckBpm::class, 'id_purchase_order');
+    }
 
 }

@@ -15,7 +15,6 @@ class Provider extends Model
 
     protected $fillable = [
         'name',
-        'plates',
         'state',
     ];
 
@@ -24,18 +23,28 @@ class Provider extends Model
     public function purchaseOrder()
     {
         return $this->hasMany(
-            PurchaseOrder::class, 
-            'id_provider', 
+            PurchaseOrder::class,
+            'id_provider',
+            'id_provider'
         );
     }
 
     public function products()
     {
         return $this->hasMany(
-            Product::class, 
-            'id_provider', 
+            Product::class,
+            'id_provider',
+            'id_provider'
         );
     }
 
-
+    public function plates()
+    {
+        return $this->hasMany(
+            PlatesModel::class,
+            'id_provider',
+            'id_provider'
+        );
+    }
 }
+

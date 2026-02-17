@@ -15,7 +15,7 @@ const form = ref({
 })
 const resetForm = () => {
   form.value.name = ''
-  form.value.plates = ''
+  form.value.plates = []
   form.value.state = ''
 }
 
@@ -25,14 +25,29 @@ const store = async () => {
     success.value = ''
     errors.value = {}
 
+    // 🔥 Convertir string a array
+    const formattedPlates = form.value.plates
+      ? form.value.plates
+          .split(',')
+          .map(p => p.trim())
+          .filter(p => p.length > 0)
+      : []
+
+    const payload = {
+      name: form.value.name,
+      state: form.value.state,
+      plates: formattedPlates
+    }
+
     const response = await fetch('http://localhost:8000/api/providers', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Accept: 'application/json',
       },
-      body: JSON.stringify(form.value),
+      body: JSON.stringify(payload),
     })
+
 
     const data = await response.json()
 
@@ -109,7 +124,13 @@ const update = async () => {
         },
         body: JSON.stringify({
           name: editing.value.name,
-          plates: editing.value.plates,
+          plates: editing.value.plates
+            ? editing.value.plates
+                .split(',')
+                .map(p => p.trim())
+                .filter(p => p.length > 0)
+            : [],
+
           state: editing.value.state,
         }),
       }
@@ -224,7 +245,6 @@ onMounted(fetchProviders)
           <table class="table table-sm table-hover mb-0 text-center align-middle small">
             <thead class="table-light">
               <tr>
-                <th width="10%">ID</th>
                 <th width="25%">Nombre</th>
                 <th width="20%">Placas</th>
                 <th width="20%">Estado</th>
@@ -246,9 +266,8 @@ onMounted(fetchProviders)
               </tr>
 
               <tr v-else v-for="p in providers" :key="p.id_provider">
-                <td>{{ p.id_provider }}</td>
                 <td>{{ p.name }}</td>
-                <td>{{ p.plates }}</td>
+                <td>{{ p.plates?.map(plate => plate.plate_number).join(', ') }}</td>
                 <td>
                   <span
                     class="badge small"

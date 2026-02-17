@@ -1,6 +1,6 @@
 <script setup>
 import AppLayout from '@/Layouts/AuthenticatedLayout.vue'
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import { router } from '@inertiajs/vue3'
 
 /* ============================= */
@@ -18,6 +18,7 @@ const goDashboard = () => {
   console.log('Redirigiendo a /dashboard')
 }
 
+const plates = ref([])
 const providers = ref([])
 const products = ref([])
 const loading = ref(false)
@@ -52,10 +53,43 @@ const form = ref({
   status: 'PENDIENTE',
   id_provider: '',
   state: '',
+  plates : [],
   products: []
 })
 
-/* ============================= */
+
+const newPlate = ref('')
+const addPlate = () => {
+  if (!newPlate.value) return
+
+  const formatted = newPlate.value.trim().toUpperCase()
+
+  if (!form.value.plates.includes(formatted)) {
+    form.value.plates.push(formatted)
+  }
+
+  newPlate.value = ''
+}
+const removePlate = (index) => {
+  form.value.plates.splice(index, 1)
+}
+
+
+const selectPlate = (event) => {
+  const plate = event.target.value
+  if (!plate) return
+
+  if (!form.value.plates.includes(plate)) {
+    form.value.plates.push(plate)
+  }
+
+  event.target.value = ''
+}
+
+
+
+
+
 
 const fetchProducts = async () => {
   try {
@@ -97,12 +131,23 @@ const fetchProviders = async () => {
 watch(
   () => form.value.id_provider,
   (newProviderId) => {
-    const selected = providers.value.find(
-      p => p.id_provider == newProviderId
-    )
-    form.value.state = selected ? selected.state : ''
+    if (!newProviderId) {
+      plates.value = []
+      form.value.plates = []
+      form.value.state = ''
+      return
+    }
+    const selected = providers.value.find(p => p.id_provider == newProviderId)
+    plates.value = selected?.plates?.map(p => p.plate_number) ?? []
+    form.value.state = selected?.state ?? ''
+    form.value.plates = []
   }
 )
+
+
+
+
+
 const addProduct = (product) => {
   form.value.products.push({
     uid: Date.now() + Math.random(), 
@@ -169,6 +214,31 @@ const goTest = async () => {
   }
 }
 
+const OrderComplete = computed(() => {
+  if (!form.value.id_provider) return false
+
+  if (form.value.plates.length === 0) return false
+
+  if (form.value.products.length === 0) return false
+
+  for (const item of form.value.products) {
+    if (
+      !item.unit_measure ||
+      item.bulk_or_roll_quantity <= 0 ||
+      !item.document_type ||
+      !item.number
+    ) {
+      return false
+    }
+  }
+
+  console.log('Enviando:', form.value)
+
+
+  return true 
+})
+
+
 
 
 
@@ -180,7 +250,7 @@ const goTest = async () => {
       <h2 class="fw-bold mb-0">Orden de Pedido</h2>
     </template>
 
-    <div class="container-fluid py-3">
+    <div class="container-fluid py-3 bg-lightgray rounded-3 main-scroll">
 
       <!-- ================= INFO GENERAL ================= -->
       <div class="card shadow-sm mb-3 compact-card">
@@ -189,8 +259,7 @@ const goTest = async () => {
 
             <div class="col-md-2">
               <label class="form-label small fw-bold">Fecha</label>
-              <input class="form-control form-control-sm bg-light" 
-                     :value="form.date" disabled>
+              <input class="form-control form-control-sm bg-light" :value="form.date" disabled>
             </div>
 
             <div class="col-md-2">
@@ -201,22 +270,80 @@ const goTest = async () => {
 
             <div class="col-md-3">
               <label class="form-label small fw-bold">Proveedor</label>
-              <select class="form-select form-select-sm"
-                      v-model="form.id_provider">
-                <option value="">Seleccionar</option>
-                <option v-for="p in providers"
-                        :key="p.id_provider"
-                        :value="p.id_provider">
+              
+              <select class="form-select form-select-sm custom-select-green"v-model="form.id_provider">                
+                <option value="" class="text-dark">Seleccionar</option>
+                <option v-for="p in providers":key="p.id_provider":value="p.id_provider"class="text-dark">
                   {{ p.name }}
                 </option>
               </select>
+
             </div>
+            <div class="col-md-2">
+              <label class="form-label small fw-bold">Placas</label>
+
+              <!-- 🔹 SELECT para placas existentes -->
+              <select
+                class="form-select form-select-sm mb-1"
+                :disabled="!form.id_provider"
+                @change="selectPlate"
+              >
+                <option value="">Seleccionar placa</option>
+                <option
+                  v-for="plate in plates"
+                  :key="plate"
+                  :value="plate"
+                >
+                  {{ plate }}
+                </option>
+              </select>
+
+
+              <!-- 🔹 INPUT para nueva placa -->
+              <div class="d-flex gap-1">
+                <input
+                  type="text"
+                  class="form-control form-control-sm"
+                  v-model="newPlate"
+                  :disabled="!form.id_provider"
+                  placeholder="Nueva placa"
+                  @keyup.enter="addPlate"
+                />
+                <button
+                  type="button"
+                  class="btn btn-sm btn-primary"
+                  @click="addPlate"
+                  :disabled="!newPlate"
+                >
+                  +
+                </button>
+              </div>
+
+
+              <div class="mt-2 d-flex flex-wrap gap-1">
+                <span
+                  v-for="(plate, index) in form.plates"
+                  :key="index"
+                  class="badge bg-success d-flex align-items-center"
+                >
+                  {{ plate }}
+                  <button
+                    type="button"
+                    class="btn-close btn-close-white btn-sm ms-1"
+                    style="font-size: 8px"
+                    @click="removePlate(index)"
+                  ></button>
+                </span>
+              </div>
+            </div>
+
+
 
             <div class="col-md-2">
               <label class="form-label small fw-bold">Estado</label>
               <input class="form-control form-control-sm bg-light"
-                     :value="form.state || 'N/A'"
-                     disabled>
+                    :value="form.state || 'N/A'"
+                    disabled>
             </div>
 
           </div>
@@ -228,7 +355,7 @@ const goTest = async () => {
         <div class="card-body py-2">
           <label class="form-label small fw-bold">Buscar producto</label>
           <input type="text"
-                 class="form-control form-control-sm"
+                 class="form-control form-control-sm custom-select-green"
                  placeholder="Escribe para buscar..."
                  v-model="filters.search">
         </div>
@@ -242,7 +369,7 @@ const goTest = async () => {
               <tr>
                 <th width="20%">Título</th>
                 <th width="15%">Clave</th>
-                <th width="45%">Descripción</th>
+                <th width="55%">Descripción</th>
                 <th width="10%">Agregar</th>
               </tr>
             </thead>
@@ -252,8 +379,7 @@ const goTest = async () => {
                 <td>{{ product.code }}</td>
                 <td class="text-truncate">{{ product.description }}</td>
                 <td>
-                  <button class="btn btn-sm btn-success"
-                          @click="addProduct(product)">
+                  <button class="btn btn-sm btn-success" @click="addProduct(product)">
                     +
                   </button>
                 </td>
@@ -274,7 +400,7 @@ const goTest = async () => {
         <div class="card-body p-0">
 
           <table class="table table-sm table-bordered mb-0 text-center align-middle small">
-            <thead style="background:#2e7d32;" class="text-white">
+            <thead style="background:#2e7d32;" class="form-label small fw-bold">
               <tr>
                 <th width="10%">Clave</th>
                 <th width="15%">Descripción</th>
@@ -296,67 +422,49 @@ const goTest = async () => {
                 <td class="text-truncate">{{ item.description }}</td>
 
                 <td>
-                  <select class="form-select form-select-sm compact-input"
-                          v-model="item.unit_measure">
-                    <option value="">-</option>
-                    <option v-for="u in unitMeasures"
-                            :key="u.value"
-                            :value="u.value">
+                  <select class="form-select form-select-sm compact-input custom-select-green"v-model="item.unit_measure">
+                    <option value="">Seleccione</option>
+                    <option v-for="u in unitMeasures":key="u.value":value="u.value">
                       {{ u.label }}
                     </option>
                   </select>
                 </td>
 
                 <td>
-                  <input type="number"
-                         class="form-control form-control-sm compact-input"
-                         v-model="item.bulk_or_roll_quantity">
+                  <input type="number"class="form-control form-control-sm compact-input custom-select-green"v-model="item.bulk_or_roll_quantity">
                 </td>
 
                 <td>
-                  <input type="number"
-                         class="form-control form-control-sm compact-input"
-                         v-model="item.individual_quantity">
+                  <input type="number"class="form-control form-control-sm compact-input custom-select-green"v-model="item.individual_quantity">
                 </td>
 
                 <td>
-                  <input type="text"
-                         class="form-control form-control-sm compact-input"
-                         v-model="item.document_number">
+                  <input type="text"class="form-control form-control-sm compact-input custom-select-green"v-model="item.document_number" placeholder="Ej: OC-1234">
                 </td>
 
                 <td>
-                  <input type="checkbox"
-                         class="form-check-input"
-                         v-model="item.non_conformity">
+                  <input type="checkbox" class="form-check-input custom-select-green" v-model="item.non_conformity">
                 </td>
 
                 <td>
-                  <input type="text"
-                         class="form-control form-control-sm compact-input"
-                         v-model="item.lot">
+                  <input type="text"class="form-control form-control-sm compact-input custom-select-green"v-model="item.lot" placeholder="Ej: LOTE-5678">
                 </td>
 
                 <td>
-                  <select class="form-select form-select-sm compact-input"
-                          v-model="item.document_type">
-                    <option value="">-</option>
-                    <option v-for="d in documentTypes"
-                            :key="d.value"
-                            :value="d.value">
+                  <select class="form-select form-select-sm compact-input custom-select-green" v-model="item.document_type" >
+                    <option value="">Seleccione</option>
+                    <option v-for="d in documentTypes"   :key="d.value"   :value="d.value">
                       {{ d.label }}
                     </option>
                   </select>
                 </td>
 
                 <td>
-                  <input type="text"
-                         class="form-control form-control-sm compact-input"
-                         v-model="item.number">
+                  <input type="text"class="form-control form-control-sm compact-input custom-select-green"v-model="item.number" placeholder="Ej: 1234">
                 </td>
 
                 <td>
-                  <button class="btn btn-sm btn-outline-danger" @click="removeProduct(item.uid)">
+                  <button class="btn btn-sm btn-outline-danger " @click="removeProduct(item.uid)">
                     <i class="fa-solid fa-trash"></i>
                   </button>
                 </td>
@@ -381,35 +489,129 @@ const goTest = async () => {
           Cancelar
         </button>
 
-        <button 
-          class="btn btn-success btn-sm"
-          @click="goTest"
-        >
+        <button v-if="OrderComplete"class="btn btn-success btn-sm"@click="goTest"> 
           Guardar orden
         </button>
+
       </div>
 
     </div>
   </AppLayout>
 </template>
 <style scoped>
+
+.main-scroll {
+  height: calc(100vh - 120px); /* Ajusta si tu header es más grande */
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+/* Scroll elegante */
+.main-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.main-scroll::-webkit-scrollbar-thumb {
+  background-color: #2d2b298a;
+  border-radius: 10px;
+}
+
+.main-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
 .compact-card {
-  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  transition: 0.2s ease-in-out;
+  background: white;
+}
+
+.compact-card:hover {
+  box-shadow: 0 4px 14px rgba(0,0,0,0.06);
 }
 
 .compact-input {
-  padding: 2px 4px !important;
+  padding: 4px 6px !important;
   font-size: 12px;
+  border-radius: 6px;
 }
+
+/* Inputs verdes suaves */
+.custom-select-green {
+  background-color: #ecfdf5 !important;
+  border: 1px solid #86efac !important;
+  color: #065f46 !important;
+}
+
+.custom-select-green:focus {
+  border-color: #22c55e !important;
+  box-shadow: 0 0 0 0.1rem rgba(34,197,94,.25) !important;
+}
+
 
 .table td,
 .table th {
   padding: 6px !important;
   font-size: 12px;
+  vertical-align: middle !important;
 }
 
-h2 {
-  font-size: 20px;
+.table thead {
+  font-size: 12px;
+  letter-spacing: 0.3px;
 }
+
+/* Encabezado verde elegante */
+.table thead tr {
+  background: linear-gradient(90deg, #166534, #15803d);
+}
+
+/* Botón principal elegante */
+.btn-success {
+  background-color: #009975 !important;
+  border-color: #009975 !important;
+  border-radius: 6px;
+}
+
+.btn-success:hover {
+  background-color: #15803d !important;
+  border-color: #15803d !important;
+}
+
+/* Botón eliminar */
+.btn-outline-danger {
+  border-radius: 6px;
+}
+
+/* ============================= */
+/* TITULO */
+/* ============================= */
+
+h2 {
+  font-size: 18px;
+  letter-spacing: 0.5px;
+}
+
+/* ============================= */
+/* FONDO GENERAL */
+/* ============================= */
+
+.bg-lightgray {
+  background-color: #f3f4f6;
+}
+
+/* ============================= */
+/* OPCIONAL: Quitar scroll global */
+/* (solo si quieres efecto tipo app real) */
+/* ============================= */
+
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+}
+
+
 </style>
 

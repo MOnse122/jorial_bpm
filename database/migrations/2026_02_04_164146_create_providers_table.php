@@ -14,7 +14,6 @@ return new class extends Migration
         Schema::create('providers', function (Blueprint $table) {
             $table->bigIncrements('id_provider');
             $table->string('name');
-            $table->string('plates');
             $table->enum('state', ['NORMAL', 'REDUCIDA', 'SEVERA'])->default('NORMAL');
             $table->timestamps();
             $table->softDeletes();

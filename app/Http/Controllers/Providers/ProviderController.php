@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Providers;
 
 use App\Http\Controllers\Controller;
 use App\Models\Provider;
+use App\Models\PlatesModel;
 use Illuminate\Http\Request;
-
 
 class ProviderController extends Controller
 {
@@ -14,7 +14,9 @@ class ProviderController extends Controller
      */
     public function index()
     {
-        return response()->json(Provider::all());
+        return response()->json(
+            Provider::with('plates')->get()
+        );
     }
 
     /**
@@ -23,30 +25,43 @@ class ProviderController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'name' => 'required|string|max:255',
-            'plates' => 'required|string|min:6|max:10',
-            'state' => 'required|in:NORMAL,SEVERA,REDUCIDA',
+            'name'   => 'required|string|max:255',
+            'state'  => 'required|in:NORMAL,SEVERA,REDUCIDA',
+            'plates' => 'nullable|array',
+            'plates.*' => 'string|min:6|max:10',
         ]);
 
-        $existingProvider = Provider::where('plates', $request->plates)
-            ->orWhere(function ($query) use ($request) {
-                $query->where('name', $request->name)
-                      ->where('state', $request->state);
-            })
+        // Validar que no exista proveedor igual
+        $existingProvider = Provider::where('name', $request->name)
+            ->where('state', $request->state)
             ->first();
+
         if ($existingProvider) {
-            return response()->json(['message' => 'Ya existe este registro'], 409);
+            return response()->json([
+                'message' => 'Ya existe este proveedor'
+            ], 409);
         }
 
-
-         $provider = Provider::create([
-            'name' => $request->name,
-            'plates' => $request->plates,
+        // Crear proveedor
+        $provider = Provider::create([
+            'name'  => $request->name,
             'state' => $request->state,
         ]);
 
-        return response()->json($provider, 201);
+        // Crear placas si vienen
+        if ($request->has('plates')) {
+            foreach ($request->plates as $plate) {
+                PlatesModel::create([
+                    'plate_number' => strtoupper($plate),
+                    'id_provider'  => $provider->id_provider,
+                ]);
+            }
+        }
 
+        return response()->json(
+            Provider::with('plates')->find($provider->id_provider),
+            201
+        );
     }
 
     /**
@@ -54,10 +69,9 @@ class ProviderController extends Controller
      */
     public function show(string $id)
     {
-        $requestedProvider = Provider::findOrFail($id);
-        return response()->json($requestedProvider);
-        
-        
+        return response()->json(
+            Provider::with('plates')->findOrFail($id)
+        );
     }
 
     /**
@@ -66,26 +80,54 @@ class ProviderController extends Controller
     public function update(Request $request, string $id)
     {
         $request->validate([
-            'name' => 'required|string|max:255',
-            'plates' => 'required|string|min:6|max:10',
-            'state' => 'required|in:NORMAL,SEVERA,REDUCIDA',
+            'name'   => 'required|string|max:255',
+            'state'  => 'required|in:NORMAL,SEVERA,REDUCIDA',
+            'plates' => 'nullable|array',
+            'plates.*' => 'string|min:6|max:10',
         ]);
 
-       return response()->json([
-            'message' => 'Proveedor actualizado correctamente.',
-            'response' => Provider::findOrFail($id)->update([
-                'name' => $request->name,
-                'plates' => $request->plates,
-                'state' => $request->state,
-            ]), 200
-        ]); 
+        $provider = Provider::findOrFail($id);
 
+        $provider->update([
+            'name'  => $request->name,
+            'state' => $request->state,
+        ]);
+
+        // Si mandan placas, reemplazarlas
+        if ($request->has('plates')) {
+
+            // eliminar placas anteriores
+            $provider->plates()->delete();
+
+            // crear nuevas
+            foreach ($request->plates as $plate) {
+                PlatesModel::create([
+                    'plate_number' => strtoupper($plate),
+                    'id_provider'  => $provider->id_provider,
+                ]);
+            }
+        }
+
+        return response()->json([
+            'message' => 'Proveedor actualizado correctamente.',
+            'provider' => Provider::with('plates')->find($id)
+        ]);
     }
 
+    /**
+     * Remove the specified resource from storage.
+     */
     public function destroy(string $id)
     {
         $provider = Provider::findOrFail($id);
+
+        // eliminar placas relacionadas
+        $provider->plates()->delete();
+
         $provider->delete();
 
-        return response()->json(['message' => 'Proveedor eliminado correctamente.']);    }
+        return response()->json([
+            'message' => 'Proveedor eliminado correctamente.'
+        ]);
+    }
 }
