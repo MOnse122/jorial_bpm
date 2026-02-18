@@ -7,12 +7,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Models\PurchaseOrder;
 
-
 class OrderDetails extends Model
 {
     use HasFactory, SoftDeletes;
+
     protected $table = 'order_details';
     protected $primaryKey = 'id_order_detail';
+
     protected $fillable = [
         'id_purchase_order',
         'lot',
@@ -21,9 +22,11 @@ class OrderDetails extends Model
         'individual_quantity',
         'non_conformity',
         'document_number',
-        'id_document',
+        'document_type',
         'id_product',
+        'id_plate',
     ];
+
     protected $casts = [
         'non_conformity' => 'boolean',
     ];
@@ -31,9 +34,12 @@ class OrderDetails extends Model
     public function purchaseOrder()
     {
         return $this->belongsTo(
-            PurchaseOrder::class, 
-            'id_purchase_order');
+            PurchaseOrder::class,
+            'id_purchase_order',
+            'id_purchase_order'
+        );
     }
+
     public function product()
     {
         return $this->belongsTo(
@@ -43,7 +49,14 @@ class OrderDetails extends Model
         );
     }
 
-        
+    public function plate()
+    {
+        return $this->belongsTo(
+            PlatesModel::class,
+            'id_plate',
+            'id_plate'
+        );
+    }
 
 
 }

@@ -51,11 +51,11 @@ function logout() {
                 </Link>
 
                 <Link
-                    href="/purchases"
+                    href="/purchases/puview"
                     class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 no-underline"
                 >
-                    <i class="fa-solid fa-cart-shopping"></i>
-                    <span v-if="sidebarOpen" class="ml-3">Ordenes de pedido</span>
+                    <i class="fa-solid fa-diagram-project"></i>
+                    <span v-if="sidebarOpen" class="ml-3">Ordenes de Pedido</span>
                 </Link>
 
                 <Link

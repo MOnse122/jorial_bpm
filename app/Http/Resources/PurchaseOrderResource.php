@@ -14,11 +14,10 @@ class PurchaseOrderResource extends JsonResource
             'folio' => $this->folio,
             'date' => $this->date,
             'status' => $this->status,
-
+            
             'provider' => $this->provider ? [
                 'id_provider' => $this->provider->id_provider,
                 'name' => $this->provider->name,
-                'state' => $this->provider->state,
             ] : null,
 
             'details' => $this->orderDetails->map(function ($detail) {
@@ -30,14 +29,24 @@ class PurchaseOrderResource extends JsonResource
                     'individual_quantity' => $detail->individual_quantity,
                     'non_conformity' => $detail->non_conformity,
                     'document_number' => $detail->document_number,
+                    'document_type' => $detail->document_type,
+                    
 
                     'product' => $detail->product ? [
                         'id_product' => $detail->product->id_product,
                         'title' => $detail->product->title,
                         'code' => $detail->product->code,
+                        'description' => $detail->product->description,
                     ] : null,
+
+                    'plate' => $detail->plate ? [
+                        'id_plate' => $detail->plate->id_plate,
+                        'plate_number' => $detail->plate->plate_number,
+                    ] : null,
+
                 ];
             }),
+
         ];
     }
 

@@ -15,13 +15,13 @@ return new class extends Migration
             $table->bigIncrements('id_order_detail');
 
             $table->unsignedBigInteger('id_purchase_order');
-            $table->unsignedBigInteger('id_document')->nullable();
             $table->unsignedBigInteger('id_product');
-
-
+            $table->unsignedBigInteger('id_plate') ->nullable();
 
             $table->string('lot', 50)->nullable();
             $table->string('unit_measure', 20);
+            $table->string('document_number', 255)->nullable();
+            $table->string('document_type', 50)->nullable();
 
             $table->integer('bulk_or_roll_quantity');
             $table->integer('individual_quantity');
@@ -42,13 +42,10 @@ return new class extends Migration
                 ->on('products')
                 ->cascadeOnDelete();
 
-            
-            $table->foreign('id_document')
-                ->references('id_document')
-                ->on('documents')
-                ->onDelete('set null');
-
-
+            $table->foreign('id_plate')
+            ->references('id_plate')
+            ->on('plates')
+            ->onDelete('set null');
         });
     }
 

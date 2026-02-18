@@ -3,9 +3,7 @@ import AppLayout from '@/Layouts/AuthenticatedLayout.vue'
 import { ref, onMounted, watch, computed } from 'vue'
 import { router } from '@inertiajs/vue3'
 
-/* ============================= */
-/* FUNCION FECHA LOCAL */
-/* ============================= */
+
 const getTodayLocalDate = () => {
   const today = new Date()
   const offset = today.getTimezoneOffset()
@@ -30,7 +28,6 @@ const pagination = ref({
   last_page: 1,
 })
 
-
 const filters = ref({
   search: ''
 })
@@ -42,11 +39,10 @@ const unitMeasures = [
 ]
 
 const documentTypes = [
-  { value: 'FACTURA', label: 'Factura' },
-  { value: 'REMISION', label: 'Remisión' },
-  { value: 'OTRO', label: 'Otro' },
+  { value: 'FACTURA', label: 'FACTURA' },
+  { value: 'REMISION', label: 'REMISION' },
+  { value: 'OTRO', label: 'OTRO' },
 ]
-
 
 const form = ref({
   date: getTodayLocalDate(),
@@ -54,9 +50,12 @@ const form = ref({
   id_provider: '',
   state: '',
   plates : [],
-  products: []
-})
+  products: [],
+  document_number: '',
+  document_type: '',
+  global_document_number: '',
 
+})
 
 const newPlate = ref('')
 const addPlate = () => {
@@ -85,11 +84,6 @@ const selectPlate = (event) => {
 
   event.target.value = ''
 }
-
-
-
-
-
 
 const fetchProducts = async () => {
   try {
@@ -144,10 +138,6 @@ watch(
   }
 )
 
-
-
-
-
 const addProduct = (product) => {
   form.value.products.push({
     uid: Date.now() + Math.random(), 
@@ -165,9 +155,6 @@ const addProduct = (product) => {
   })
 }
 
-
-
-
 const removeProduct = (uid) => {
   form.value.products = form.value.products.filter(
     p => p.uid !== uid
@@ -176,6 +163,13 @@ const removeProduct = (uid) => {
 
 
 const saveOrder = async () => {
+
+    if (form.value.use_global_document) {
+    form.value.products.forEach(p => {
+      p.document_type = form.value.document_type
+      p.number = form.value.document_number
+    })
+  }
   const response = await fetch(
     'http://localhost:8000/api/purchase-order',
     {
@@ -194,10 +188,16 @@ const saveOrder = async () => {
     throw new Error('Error al guardar la orden')
   }
 
-  return await response.json()
+  if (form.value.use_global_document) {
+  form.value.products.forEach(p => {
+    p.document_type = form.value.document_type
+    p.number = form.value.document_number
+  })
 }
 
 
+  return await response.json()
+}
 
 onMounted(() => {
   fetchProducts()
@@ -213,32 +213,38 @@ const goTest = async () => {
     alert('No se pudo guardar la orden')
   }
 }
-
 const OrderComplete = computed(() => {
+
   if (!form.value.id_provider) return false
-
   if (form.value.plates.length === 0) return false
-
   if (form.value.products.length === 0) return false
 
-  for (const item of form.value.products) {
-    if (
-      !item.unit_measure ||
-      item.bulk_or_roll_quantity <= 0 ||
-      !item.document_type ||
-      !item.number
-    ) {
+  // Validar documento global
+  if (form.value.use_global_document) {
+    if (!form.value.document_type || !form.value.document_number) {
       return false
     }
   }
 
-  console.log('Enviando:', form.value)
+  for (const item of form.value.products) {
 
+    if (
+      !item.unit_measure ||
+      item.bulk_or_roll_quantity <= 0
+    ) {
+      return false
+    }
 
-  return true 
+    // Validar documento individual SOLO si no es global
+    if (!form.value.use_global_document) {
+      if (!item.document_type || !item.number) {
+        return false
+      }
+    }
+  }
+
+  return true
 })
-
-
 
 
 
@@ -252,7 +258,6 @@ const OrderComplete = computed(() => {
 
     <div class="container-fluid py-3 bg-lightgray rounded-3 main-scroll">
 
-      <!-- ================= INFO GENERAL ================= -->
       <div class="card shadow-sm mb-3 compact-card">
         <div class="card-body py-2">
           <div class="row g-2 align-items-end">
@@ -277,12 +282,14 @@ const OrderComplete = computed(() => {
                   {{ p.name }}
                 </option>
               </select>
-
             </div>
+          </div>
+        </div>
+        <div class="card-body py-2">
+          <div class="row g-2 align-items-end">
             <div class="col-md-2">
               <label class="form-label small fw-bold">Placas</label>
 
-              <!-- 🔹 SELECT para placas existentes -->
               <select
                 class="form-select form-select-sm mb-1"
                 :disabled="!form.id_provider"
@@ -297,9 +304,6 @@ const OrderComplete = computed(() => {
                   {{ plate }}
                 </option>
               </select>
-
-
-              <!-- 🔹 INPUT para nueva placa -->
               <div class="d-flex gap-1">
                 <input
                   type="text"
@@ -319,7 +323,6 @@ const OrderComplete = computed(() => {
                 </button>
               </div>
 
-
               <div class="mt-2 d-flex flex-wrap gap-1">
                 <span
                   v-for="(plate, index) in form.plates"
@@ -337,14 +340,46 @@ const OrderComplete = computed(() => {
               </div>
             </div>
 
-
-
             <div class="col-md-2">
               <label class="form-label small fw-bold">Estado</label>
               <input class="form-control form-control-sm bg-light"
                     :value="form.state || 'N/A'"
                     disabled>
             </div>
+
+            <div class="col-md-3 d-flex align-items-center mt-3">
+              <input 
+                type="checkbox"
+                class="form-check-input me-2"
+                v-model="form.use_global_document"
+              >
+              <label class="small fw-bold">
+                Usar mismo documento para todos los productos
+              </label>
+            </div>
+
+            <div v-if="form.use_global_document" class="col-md-2">
+              <label class="form-label small fw-bold">Tipo Doc</label>
+              <select class="form-select form-select-sm custom-select-green"
+                      v-model="form.document_type">
+                <option value="">Seleccione</option>
+                <option v-for="d in documentTypes"
+                        :key="d.value"
+                        :value="d.value">
+                  {{ d.label }}
+                </option>
+              </select>
+            </div>
+
+            <div v-if="form.use_global_document" class="col-md-2">
+              <label class="form-label small fw-bold">Número Doc</label>
+              <input type="text"
+                    class="form-control form-control-sm custom-select-green"
+                    v-model="form.document_number"
+                    placeholder="Ej: 1234">
+            </div>
+
+
 
           </div>
         </div>
@@ -410,8 +445,8 @@ const OrderComplete = computed(() => {
                 <th width="10%">Orden</th>
                 <th width="6%">NC</th>
                 <th width="8%">Lote</th>
-                <th width="10%">Tipo Doc</th>
-                <th width="10%">No Doc</th>
+                <th v-if="!form.use_global_document" width="10%">Tipo Doc</th>
+                <th v-if="!form.use_global_document" width="10%">No Doc</th>
                 <th width="4%"></th>
               </tr>
             </thead>
@@ -449,19 +484,31 @@ const OrderComplete = computed(() => {
                 <td>
                   <input type="text"class="form-control form-control-sm compact-input custom-select-green"v-model="item.lot" placeholder="Ej: LOTE-5678">
                 </td>
-
-                <td>
-                  <select class="form-select form-select-sm compact-input custom-select-green" v-model="item.document_type" >
+                <td v-if="!form.use_global_document">
+                  <select v-model="item.document_type" class="form-select form-select-sm">
                     <option value="">Seleccione</option>
-                    <option v-for="d in documentTypes"   :key="d.value"   :value="d.value">
+                    <option v-for="d in documentTypes"
+                            :key="d.value"
+                            :value="d.value">
                       {{ d.label }}
                     </option>
                   </select>
                 </td>
 
-                <td>
-                  <input type="text"class="form-control form-control-sm compact-input custom-select-green"v-model="item.number" placeholder="Ej: 1234">
+                <td v-if="!form.use_global_document">
+                  <input type="text"
+                        v-model="item.number"
+                        class="form-control form-control-sm"
+                        placeholder="Ej: DOC-9012">
                 </td>
+              <td v-if="!form.use_global_document">
+                <input
+                  type="text"
+                  class="form-control form-control-sm compact-input custom-select-green"
+                  v-model="item.number"
+                  placeholder="Ej: DOC-9012"
+                >
+              </td>
 
                 <td>
                   <button class="btn btn-sm btn-outline-danger " @click="removeProduct(item.uid)">
@@ -480,7 +527,6 @@ const OrderComplete = computed(() => {
           </table>
         </div>
       </div>
-      <!-- ================= BOTONES ================= -->
       <div class="d-flex justify-content-end gap-2">
         <button 
           class="btn btn-outline-secondary btn-sm"
@@ -501,12 +547,11 @@ const OrderComplete = computed(() => {
 <style scoped>
 
 .main-scroll {
-  height: calc(100vh - 120px); /* Ajusta si tu header es más grande */
+  height: calc(100vh - 120px); 
   overflow-y: auto;
   padding-right: 4px;
 }
 
-/* Scroll elegante */
 .main-scroll::-webkit-scrollbar {
   width: 6px;
 }
@@ -537,7 +582,6 @@ const OrderComplete = computed(() => {
   border-radius: 6px;
 }
 
-/* Inputs verdes suaves */
 .custom-select-green {
   background-color: #ecfdf5 !important;
   border: 1px solid #86efac !important;
@@ -548,7 +592,6 @@ const OrderComplete = computed(() => {
   border-color: #22c55e !important;
   box-shadow: 0 0 0 0.1rem rgba(34,197,94,.25) !important;
 }
-
 
 .table td,
 .table th {
@@ -562,12 +605,10 @@ const OrderComplete = computed(() => {
   letter-spacing: 0.3px;
 }
 
-/* Encabezado verde elegante */
 .table thead tr {
   background: linear-gradient(90deg, #166534, #15803d);
 }
 
-/* Botón principal elegante */
 .btn-success {
   background-color: #009975 !important;
   border-color: #009975 !important;
@@ -579,39 +620,23 @@ const OrderComplete = computed(() => {
   border-color: #15803d !important;
 }
 
-/* Botón eliminar */
 .btn-outline-danger {
   border-radius: 6px;
 }
-
-/* ============================= */
-/* TITULO */
-/* ============================= */
 
 h2 {
   font-size: 18px;
   letter-spacing: 0.5px;
 }
 
-/* ============================= */
-/* FONDO GENERAL */
-/* ============================= */
-
 .bg-lightgray {
   background-color: #f3f4f6;
 }
-
-/* ============================= */
-/* OPCIONAL: Quitar scroll global */
-/* (solo si quieres efecto tipo app real) */
-/* ============================= */
-
 
 html, body {
   height: 100%;
   overflow: hidden;
 }
-
 
 </style>
 

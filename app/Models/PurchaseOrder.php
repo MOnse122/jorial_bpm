@@ -47,12 +47,6 @@ class PurchaseOrder extends Model
         return $this->hasMany(OrderDetails::class, 'id_purchase_order');
     }
 
-    // Relación con documentos
-    public function documents()
-    {
-        return $this->hasMany(Documents::class, 'id_purchase_order');
-    }
-
     // Relación con BPM
     public function checkBpm()
     {
