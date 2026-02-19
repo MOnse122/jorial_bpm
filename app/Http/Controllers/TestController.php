@@ -2,19 +2,21 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CheckBpm;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
+
+
 
 class TestController extends Controller
+
 {
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        return redirect()->route('');
-        
-
-
+        return Inertia::render('Views/Test');
         
     }
 
@@ -23,7 +25,18 @@ class TestController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $request->validate([
+            'id_purchase_order' => 'required|exists:purchase_order,id_purchase_order',
+            'users_id' => 'required|exists:users,users_id',
+            'id_evaluation' => 'required|exists:evaluation,id_evaluation',
+            'observations' => 'nullable|string',
+            'name_provider' => 'required|string',
+        ]);
+
+        $test_bpm = CheckBpm::create($request->all());
+
+        return response()->json($test_bpm, 201);
+        
     }
 
     /**

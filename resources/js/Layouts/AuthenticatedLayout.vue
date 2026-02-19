@@ -59,11 +59,11 @@ function logout() {
                 </Link>
 
                 <Link
-                    href="/bpms"
+                    href="/api/test"
                     class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 no-underline"
                 >
                     <i class="fa-solid fa-list-check"></i>
-                    <span v-if="sidebarOpen" class="ml-3">BPM Completados</span>
+                    <span v-if="sidebarOpen" class="ml-3">Test</span>
                 </Link>
 
                 <button

@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Providers\ProviderController;
 use App\Http\Controllers\PurchaseOrder\PurchaseOrderController;
 use App\Http\Controllers\Products\ProductsController;
+use App\Http\Controllers\TestController;
 
 /*
 |--------------------------------------------------------------------------
@@ -34,7 +35,13 @@ Route::post('/purchase-order', [PurchaseOrderController::class, 'store']);
 Route::get('/purchase-order/{id}', [PurchaseOrderController::class, 'show']);
 Route::put('/purchase-order/{id}', [PurchaseOrderController::class, 'update']);
 Route::delete('/purchase-order/{id}', [PurchaseOrderController::class, 'destroy']);
+Route::get('/purchase-order/{id}/view', [PurchaseOrderController::class, 'view']);
+
 
 Route::apiResource('purchase-orders', PurchaseOrderController::class);
 Route::get('/products', [ProductsController::class, 'index']);
 Route::get('/products/{id}', [ProductsController::class, 'show']);
+
+Route::apiResource('products', ProductsController::class);
+
+Route::get('/test', [TestController::class, 'index']);

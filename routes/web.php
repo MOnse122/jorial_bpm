@@ -4,8 +4,9 @@ use App\Http\Controllers\ProfileController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
-
+use App\Http\Controllers\PurchaseOrder\PurchaseOrderController;
 use App\Http\Controllers\TestController;
+
 
 
 /*
@@ -32,41 +33,27 @@ Route::get('/dashboard', function () {
     return Inertia::render('Dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
-
-
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
 });
-
 Route::get('/purchases', function () {
     return Inertia::render('Views/PurchaseOrder');
-    })-> name ('View.Purchases');
+})->name('View.Purchases');
 
 Route::get('/providers', function () {
     return Inertia::render('Providers/Home');
-    })-> name ('providers.Home');
+})->name('providers.Home');
 
-Route::get('/products', function () {
-    return Inertia::render('Products/Home');
-    })-> name ('products.Home');
+Route::get('/purchases/puview', function () {
+    return Inertia::render('Views/PUView');
+})->name('purchases.View');
 
-Route::get('/test', [TestController::class, 'index'])->name('test');
 Route::get('/test', function () {
     return Inertia::render('Views/Test');
-})->name('test')
-
-
-;
-
-
-
-
-    
-
-
+})->name('test');
 
 
 

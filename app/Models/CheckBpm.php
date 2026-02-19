@@ -14,11 +14,11 @@ class CheckBpm extends Model
     protected $primaryKey = 'id_check_bpm';
 
     protected $fillable = [
-        'id_check_bpm',
-        'id_purchase_order',
-        'result',
         'observations',
-        'date',
+        'name_provider',
+        'id_purchase_order',
+        'users_id',
+        'id_evaluation',
     ];
     protected $casts = [
         'created_at' => 'datetime',
@@ -27,6 +27,22 @@ class CheckBpm extends Model
 
     public $timestamps = true;
 
+    public function evaluation()
+    {
+        return $this->hasOne(
+            Evaluation::class, 
+            'id_evaluation', 
+        );
+    }
+
+    public function user()
+    {
+        return $this->hasOne(
+            User::class, 
+            'users_id', 
+        );
+    }
+
     public function purchaseOrder()
     {
         return $this->hasOne(
@@ -34,13 +50,4 @@ class CheckBpm extends Model
             'id_purchase_order', 
         );
     }
-    
-    public function questions()
-    {
-        return $this->hasOne(
-            TestBPM::class, 
-            'id_test_bpm', 
-        );
-    }
-
 }
