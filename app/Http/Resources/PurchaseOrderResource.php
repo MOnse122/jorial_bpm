@@ -14,12 +14,21 @@ class PurchaseOrderResource extends JsonResource
             'folio' => $this->folio,
             'date' => $this->date,
             'status' => $this->status,
-            
+
+            // 🔹 Información del proveedor
             'provider' => $this->provider ? [
                 'id_provider' => $this->provider->id_provider,
                 'name' => $this->provider->name,
             ] : null,
 
+            'plates' => $this->orderDetails->pluck('plate')->filter()->map(function ($plate) {
+                return [
+                    'id_plate' => $plate->id_plate,
+                    'plate_number' => $plate->plate_number,
+                ];
+            })->values(),
+
+            // 🔹 Detalles de la orden (tabla order_details)
             'details' => $this->orderDetails->map(function ($detail) {
                 return [
                     'id_order_detail' => $detail->id_order_detail,
@@ -28,9 +37,8 @@ class PurchaseOrderResource extends JsonResource
                     'bulk_or_roll_quantity' => $detail->bulk_or_roll_quantity,
                     'individual_quantity' => $detail->individual_quantity,
                     'non_conformity' => $detail->non_conformity,
-                    'document_number' => $detail->document_number,
-                    'document_type' => $detail->document_type,
-                    
+                    'document_number' => $detail->document_number ?? '',
+                    'document_type' => $detail->document_type ?? '',
 
                     'product' => $detail->product ? [
                         'id_product' => $detail->product->id_product,
@@ -43,12 +51,11 @@ class PurchaseOrderResource extends JsonResource
                         'id_plate' => $detail->plate->id_plate,
                         'plate_number' => $detail->plate->plate_number,
                     ] : null,
-
                 ];
             }),
 
+            // 🔹 Solo incluimos order_products si realmente quieres relacionarlos
+            // 'order_products' => $this->orderProducts, // Opcional
         ];
     }
-
 }
-

@@ -54,6 +54,8 @@ const form = ref({
   document_number: '',
   document_type: '',
   global_document_number: '',
+  
+
 
 })
 
@@ -147,11 +149,10 @@ const addProduct = (product) => {
     unit_measure: '',
     bulk_or_roll_quantity: 0,
     individual_quantity: 0,
-    document_number: '',
+    document_number: form.value.use_global_document ? form.value.document_number : '', 
+    document_type: form.value.use_global_document ? form.value.document_type : '',
     non_conformity: false,
     lot: '',
-    document_type: '',
-    number: '',
   })
 }
 
@@ -163,41 +164,37 @@ const removeProduct = (uid) => {
 
 
 const saveOrder = async () => {
-
+  // 🔹 Si es documento global, asignamos valores a todos los productos
+  form.value.products.forEach(p => {
     if (form.value.use_global_document) {
-    form.value.products.forEach(p => {
       p.document_type = form.value.document_type
-      p.number = form.value.document_number
-    })
-  }
-  const response = await fetch(
-    'http://localhost:8000/api/purchase-order',
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      body: JSON.stringify(form.value),
+      p.document_number = form.value.document_number
+    } else {
+      p.document_type = p.document_type || ''
+      p.document_number = p.document_number || ''
     }
-  )
+  })
+
+
+  // 🔹 Petición al backend
+  const response = await fetch('http://localhost:8000/api/purchase-order', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    },
+    body: JSON.stringify(form.value),
+  })
 
   if (!response.ok) {
     const errorData = await response.json()
-    console.error(errorData)
-    throw new Error('Error al guardar la orden')
+    console.error('Error backend:', errorData)
+    throw new Error(errorData.details || 'Error al guardar la orden')
   }
-
-  if (form.value.use_global_document) {
-  form.value.products.forEach(p => {
-    p.document_type = form.value.document_type
-    p.number = form.value.document_number
-  })
-}
-
 
   return await response.json()
 }
+
 
 onMounted(() => {
   fetchProducts()
@@ -242,7 +239,6 @@ const OrderComplete = computed(() => {
       }
     }
   }
-
   return true
 })
 
@@ -501,14 +497,6 @@ const OrderComplete = computed(() => {
                         class="form-control form-control-sm"
                         placeholder="Ej: DOC-9012">
                 </td>
-              <td v-if="!form.use_global_document">
-                <input
-                  type="text"
-                  class="form-control form-control-sm compact-input custom-select-green"
-                  v-model="item.number"
-                  placeholder="Ej: DOC-9012"
-                >
-              </td>
 
                 <td>
                   <button class="btn btn-sm btn-outline-danger " @click="removeProduct(item.uid)">

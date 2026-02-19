@@ -61,6 +61,18 @@ class Product extends Model
         });
     }
 
+    public function orders()
+    {
+        return $this->belongsToMany(
+            PurchaseOrder::class,
+            'order_product',
+            'id_product',
+            'id_purchase_order'
+        )->withPivot(['quantity', 'unit_measure', 'non_conformity'])
+        ->withTimestamps();
+    }
+
+
 
 
 }

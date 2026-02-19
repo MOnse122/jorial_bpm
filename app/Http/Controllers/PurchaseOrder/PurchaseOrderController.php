@@ -8,6 +8,9 @@ use App\Models\PurchaseOrder;
 use App\Http\Resources\PurchaseOrderResource;
 use App\Models\OrderDetails;
 use App\Models\PlatesModel;
+use App\Models\OrderProduct;
+use App\Models\Document;
+use Illuminate\Support\Facades\DB;
 
 class PurchaseOrderController extends Controller
 {
@@ -28,61 +31,77 @@ class PurchaseOrderController extends Controller
     /**
      * Show the form for creating a new resource.
      */
+public function store(Request $request){
+    $request->validate([
+        'date' => 'required|date',
+        'status' => 'required|in:PENDIENTE,COMPLETADA,CANCELADA',
+        'id_provider' => 'required|exists:providers,id_provider',
+        'products' => 'required|array|min:1',
+        'products.*.id_product' => 'required|exists:products,id_product',
+        'plates' => 'nullable|array',
+        'plates.*' => 'string|min:6|max:10',
+        'document_type' => 'nullable|string',
+        'document_number' => 'nullable|string',
+    ]);
 
-    public function store(Request $request)
-    {
-        $request->validate([
-            'date' => 'required|date',
-            'status' => 'required|in:PENDIENTE,COMPLETADA,CANCELADA',
+    DB::beginTransaction();
 
-            'id_provider' => 'required|exists:providers,id_provider',
-            'products' => 'required|array|min:1',
-            'products.*.id_product' => 'required|exists:products,id_product',
-            'plates' => 'nullable|array',
-            'plates.*' => 'string|min:6|max:10',
-
-        ]);
-
+    try {
         $folio = 'PO-' . time();
 
+        // 🔹 Crear orden
         $purchaseOrder = PurchaseOrder::create([
             'folio' => $folio,
             'date' => $request->date,
             'status' => $request->status,
             'id_provider' => $request->id_provider,
-            'document_number' => $request->document_number ?? null,
-            'document_type' => $request->document_type ?? null,
         ]);
 
         $idPlate = null;
 
+        // 🔹 Manejo de placa
         if ($request->has('plates') && count($request->plates) > 0) {
             $plateNumber = strtoupper($request->plates[0]);
-
-            $plate = PlatesModel::firstOrCreate(
-                [
-                    'plate_number' => $plateNumber,
-                    'id_provider' => $request->id_provider,
-                ]
-            );
-
+            $plate = PlatesModel::firstOrCreate([
+                'plate_number' => $plateNumber,
+                'id_provider' => $request->id_provider,
+            ]);
             $idPlate = $plate->id_plate;
         }
 
+        // 🔥 Insertar productos
         foreach ($request->products as $product) {
+            // Aseguramos que cada producto tenga document_number y document_type
+            $documentNumber = $request->document_number ?? $product['document_number'] ?? null;
+            $documentType = $request->document_type ?? $product['document_type'] ?? null;
+
+            // 1️⃣ OrderDetails
             OrderDetails::create([
                 'id_purchase_order' => $purchaseOrder->id_purchase_order,
                 'id_product' => $product['id_product'],
                 'id_plate' => $idPlate,
+                'id_document' => $product['id_document'] ?? null,
                 'unit_measure' => $product['unit_measure'] ?? null,
-                'document_number' => $request->document_number ?? null,
-                'document_type' => $request->document_type ?? null,
+                'document_number' => $documentNumber,
+                'document_type' => $documentType,
                 'bulk_or_roll_quantity' => $product['bulk_or_roll_quantity'] ?? 0,
                 'individual_quantity' => $product['individual_quantity'] ?? 0,
                 'lot' => $product['lot'] ?? null,
                 'non_conformity' => $product['non_conformity'] ?? false,
             ]);
+
+            // 2️⃣ OrderProducts
+            OrderProduct::create([
+                'id_purchase_order' => $purchaseOrder->id_purchase_order,
+                'id_product' => $product['id_product'],
+                'document_number' => $documentNumber, // ⬅ siempre document_number
+                'document_type' => $documentType,     // ⬅ siempre document_type
+                'id_document' => $product['id_document'] ?? null,
+                
+            ]);
         }
+
+        DB::commit();
 
         return (new PurchaseOrderResource(
             $purchaseOrder->load([
@@ -90,9 +109,22 @@ class PurchaseOrderController extends Controller
                 'orderDetails',
                 'orderDetails.product',
                 'orderDetails.plate',
+                'orderProducts',
+                'orderProducts.product',
+                'orderProducts.document'
             ])
         ))->response()->setStatusCode(201);
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        return response()->json([
+            'error' => 'Error al guardar',
+            'details' => $e->getMessage()
+        ], 500);
     }
+}
+
+
 
 
     /**
@@ -147,7 +179,6 @@ class PurchaseOrderController extends Controller
             'details.*.individual_quantity' => 'required|integer',
             'details.*.lot' => 'required|string',
             'details.*.document_type' => 'required|in:FACTURA,REMISION,OTRO',
-            'details.*.number' => 'required|string',
             'details.*.non_conformity' => 'required|boolean',
         ]);
 

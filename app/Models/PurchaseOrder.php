@@ -19,6 +19,7 @@ class PurchaseOrder extends Model
         'status',
         'id_provider',
         'id_product',
+        'id_order_product',
         'id_user',
     ];
 
@@ -52,5 +53,22 @@ class PurchaseOrder extends Model
     {
         return $this->hasMany(CheckBpm::class, 'id_purchase_order');
     }
+
+    public function orderProducts()
+    {
+        return $this->hasMany(OrderProduct::class, 'id_purchase_order');
+    }
+    public function products()
+    {
+        return $this->belongsToMany(
+            Product::class,
+            'order_products',
+            'id_order_product',
+            'id_purchase_order',
+            'id_product'
+        )->withPivot(['quantity', 'unit_measure', 'non_conformity'])
+        ->withTimestamps();
+    }
+
 
 }

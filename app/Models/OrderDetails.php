@@ -25,6 +25,7 @@ class OrderDetails extends Model
         'document_type',
         'id_product',
         'id_plate',
+        'id_order_product',
     ];
 
     protected $casts = [
@@ -55,6 +56,15 @@ class OrderDetails extends Model
             PlatesModel::class,
             'id_plate',
             'id_plate'
+        );
+    }
+
+    public function orderProduct()
+    {
+        return $this->belongsTo(
+            OrderProduct::class,
+            'id_order_product',
+            'id_order_product'
         );
     }
 
