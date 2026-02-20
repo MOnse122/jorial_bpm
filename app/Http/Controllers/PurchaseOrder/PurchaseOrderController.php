@@ -11,6 +11,7 @@ use App\Models\PlatesModel;
 use App\Models\OrderProduct;
 use App\Models\Document;
 use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
 
 class PurchaseOrderController extends Controller
 {
@@ -69,13 +70,13 @@ public function store(Request $request){
             $idPlate = $plate->id_plate;
         }
 
-        // 🔥 Insertar productos
+        //  Insertar productos
         foreach ($request->products as $product) {
             // Aseguramos que cada producto tenga document_number y document_type
             $documentNumber = $request->document_number ?? $product['document_number'] ?? null;
             $documentType = $request->document_type ?? $product['document_type'] ?? null;
 
-            // 1️⃣ OrderDetails
+            //  OrderDetails
             OrderDetails::create([
                 'id_purchase_order' => $purchaseOrder->id_purchase_order,
                 'id_product' => $product['id_product'],
@@ -90,7 +91,7 @@ public function store(Request $request){
                 'non_conformity' => $product['non_conformity'] ?? false,
             ]);
 
-            // 2️⃣ OrderProducts
+            //  OrderProducts
             OrderProduct::create([
                 'id_purchase_order' => $purchaseOrder->id_purchase_order,
                 'id_product' => $product['id_product'],
@@ -139,6 +140,10 @@ public function store(Request $request){
         ])->findOrFail($id);
 
         return new PurchaseOrderResource($purchaseOrder);
+
+        return Inertia::render('Test', [
+        'id_purchase_order' => $id
+    ]);
     }
 
     /**

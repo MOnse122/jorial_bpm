@@ -51,10 +51,14 @@ Route::get('/purchases/puview', function () {
     return Inertia::render('Views/PUView');
 })->name('purchases.View');
 
-Route::get('/test', function () {
+Route::get('/check/test', function () {
     return Inertia::render('Views/Test');
 })->name('test');
 
-
+Route::get('/purchase-order/{id}/test', function ($id) {
+    return Inertia::render('Views/Test', [
+        'id_purchase_order' => $id
+    ]);
+})->name('purchase-order.test');
 
 require __DIR__.'/auth.php';

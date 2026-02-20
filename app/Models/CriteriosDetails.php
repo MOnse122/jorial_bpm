@@ -16,6 +16,7 @@ class CriteriosDetails extends Model
     protected $fillable = [
         'id_criterio',
         'sector',
+        'id_evaluation',
         
     ];
     protected $casts = [
@@ -23,5 +24,23 @@ class CriteriosDetails extends Model
         'updated_at' => 'datetime',
     ];
 
+
+    public function criterio()
+    {
+        return $this->belongsTo(
+            Criterios::class,
+            'id_criterio',
+            'id_criterio'
+        );
+    }
+
+    public function evaluation()
+    {
+        return $this->belongsTo(
+            Evaluation::class,
+            'id_evaluation',
+            'id_evaluation'
+        );
+    }
     public $timestamps = true;
 }

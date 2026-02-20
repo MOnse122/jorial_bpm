@@ -21,6 +21,7 @@ class PurchaseOrder extends Model
         'id_product',
         'id_order_product',
         'id_user',
+        'id_purchase_order',
     ];
 
     protected $casts = [

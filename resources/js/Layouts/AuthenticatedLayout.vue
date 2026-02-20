@@ -59,7 +59,7 @@ function logout() {
                 </Link>
 
                 <Link
-                    href="/api/test"
+                    href="/check/test"
                     class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 no-underline"
                 >
                     <i class="fa-solid fa-list-check"></i>

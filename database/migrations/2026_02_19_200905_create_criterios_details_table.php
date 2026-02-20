@@ -56,10 +56,12 @@ return new class extends Migration
             ['id_criterio' => 18, 'sector' => 'D'],
             ['id_criterio' => 19, 'sector' => 'D'],
             ['id_criterio' => 20, 'sector' => 'D'],
-            ['id_criterio' => 21, 'sector' => 'D'],
-            ['id_criterio' => 22, 'sector' => 'D'],
-            ['id_criterio' => 23, 'sector' => 'D'],
-            ['id_criterio' => 24, 'sector' => 'D'],
+
+            // E
+            ['id_criterio' => 21, 'sector' => 'E'],
+            ['id_criterio' => 22, 'sector' => 'E'],
+            ['id_criterio' => 23, 'sector' => 'E'],
+            ['id_criterio' => 24, 'sector' => 'E'],
         ]);
     }
 
