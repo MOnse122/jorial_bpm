@@ -13,11 +13,13 @@ return new class extends Migration
         Schema::create('test_bpms', function (Blueprint $table) {
             $table->bigIncrements('id_test_bpm');
             $table->unsignedBigInteger('id_purchase_order');
-            $table->unsignedBigInteger('user_id'); // ← CAMBIAR
-            $table->unsignedBigInteger('id_evaluation');
+            $table->unsignedBigInteger('users_id');
 
             $table->string('observations')->nullable();
             $table->string('name_provider');
+            $table->integer('total_score');
+            $table->decimal('percentage', 5, 2);
+            $table->string('result', 50);
 
             $table->timestamps();
             $table->softDeletes();
@@ -27,14 +29,10 @@ return new class extends Migration
                 ->on('purchase_order')
                 ->cascadeOnDelete();
 
-            $table->foreign('user_id')
+            $table->foreign('users_id')
                 ->references('id')     
                 ->on('users');
 
-            $table->foreign('id_evaluation')
-                ->references('id_evaluation')
-                ->on('evaluation')
-                ->cascadeOnDelete();
         });
 
     }

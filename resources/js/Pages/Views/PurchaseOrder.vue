@@ -149,31 +149,21 @@ const removeProduct = (uid) => {
 
 // ================== GUARDAR ORDEN ==================
 const saveOrder = async () => {
-  form.value.products.forEach(p => {
-    if (form.value.use_global_document) {
-      p.document_type = form.value.document_type
-      p.document_number = form.value.document_number
-    } else {
-      p.document_type = p.document_type || ''
-      p.document_number = p.document_number || ''
-    }
-  })
-
-  const response = await fetch('http://localhost:8000/api/purchase-order', {
+  const response = await fetch(`http://localhost:8000/api/purchase-order`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    },
     body: JSON.stringify(form.value),
   })
 
   if (!response.ok) {
-    const errorData = await response.json()
-    console.error('Error backend:', errorData)
-    throw new Error(errorData.details || 'Error al guardar la orden')
+    throw new Error('Error al guardar la orden')
   }
 
   return await response.json()
 }
-
 onMounted(() => {
   fetchProducts()
   fetchProviders()
@@ -182,8 +172,12 @@ onMounted(() => {
 const goTest = async () => {
   try {
     const data = await saveOrder()
-    console.log("Orden guardada correctamente:", data)
-    router.visit(route('test'))
+    console.log("RESPUESTA COMPLETA:", data)
+
+    const id = data.data.id_purchase_order
+
+    window.location.href = `/purchase-order/${id}/test`
+
   } catch (error) {
     alert('No se pudo guardar la orden')
   }

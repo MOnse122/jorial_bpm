@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\CheckBpm;
+use App\Models\TestBpmDetail;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
@@ -24,14 +25,14 @@ class TestController extends Controller
     /**
      * Store a newly created resource in storage.
      */
+
     public function store(Request $request)
     {
         $request->validate([
             'id_purchase_order' => 'required|exists:purchase_order,id_purchase_order',
-            'user_id' => 'required|exists:users,id',
-            'id_evaluation' => 'required|exists:evaluation,id_evaluation',
-            'observations' => 'nullable|string',
+            'users_id' => 'required|exists:users,id',
             'name_provider' => 'required|string',
+            'observations' => 'nullable|string',
             'details' => 'required|array'
         ]);
 
@@ -39,19 +40,57 @@ class TestController extends Controller
 
         try {
 
-            // 1️⃣ Crear test
-            $test = CheckBpm::create([
+            $sectorWeight = [
+                'A' => 5,
+                'B' => 4,
+                'C' => 3,
+                'D' => 2,
+                'E' => 5,
+            ];
+
+            $totalScore = 0;
+            $maxScore = 0;
+            $hasExclusiveNo = false;
+
+            foreach ($request->details as $detail) {
+
+                if ($detail['score'] === 'NA') continue;
+
+                $weight = $sectorWeight[$detail['sector']] ?? 0;
+                $maxScore += $weight;
+
+                if ($detail['score'] === 'SI') {
+                    $totalScore += $weight;
+                }
+
+                if ($detail['sector'] === 'E' && $detail['score'] === 'NO') {
+                    $hasExclusiveNo = true;
+                }
+            }
+
+            $percentage = $maxScore > 0 ? ($totalScore / $maxScore) * 100 : 0;
+
+            if ($hasExclusiveNo) $result = 'NO CONFORMIDAD';
+            elseif ($percentage >= 91) $result = 'APROBADO';
+            elseif ($percentage >= 70) $result = 'CONDICIONAL';
+            else $result = 'RECHAZADO';
+
+            // 🔹 Crear evaluación principal
+            $evaluation = CheckBpm::create([
                 'id_purchase_order' => $request->id_purchase_order,
-                'user_id' => $request->user_id,
-                'id_evaluation' => $request->id_evaluation,
-                'observations' => $request->observations,
+                'users_id' => $request->users_id,
                 'name_provider' => $request->name_provider,
+                'observations' => $request->observations,
+                'total_score' => $totalScore,
+                'percentage' => $percentage,
+                'result' => $result,
             ]);
 
-            // 2️⃣ Insertar detalles (24 criterios)
+            // 🔹 Guardar detalles usando modelo
             foreach ($request->details as $detail) {
-                DB::table('evaluation_details')->insert([
-                    'id_evaluation' => $request->id_evaluation,
+
+                TestBpmDetail::create([
+                    'id_test_bpm' => $evaluation->id_test_bpm,
                     'id_criterio_detail' => $detail['id_criterio_detail'],
                     'score' => $detail['score'],
                 ]);
@@ -60,7 +99,9 @@ class TestController extends Controller
             DB::commit();
 
             return response()->json([
-                'message' => 'Evaluación guardada correctamente'
+                'message' => 'Evaluación guardada correctamente',
+                'result' => $result,
+                'percentage' => $percentage
             ], 201);
 
         } catch (\Exception $e) {
@@ -72,7 +113,6 @@ class TestController extends Controller
             ], 500);
         }
     }
-
     /**
      * Display the specified resource.
      */

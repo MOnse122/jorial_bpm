@@ -32,7 +32,7 @@ class MilStd extends Model
     public function testBpm()
     {
         return $this->belongsTo(
-            TestBPM::class,
+            CheckBpm::class,
             'id_test_bpm'
         );
     }

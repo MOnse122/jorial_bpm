@@ -10,15 +10,17 @@ class CheckBpm extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $table = 'check_bpms';
-    protected $primaryKey = 'id_check_bpm';
+    protected $table = 'test_bpms';
+    protected $primaryKey = 'id_test_bpm';
 
     protected $fillable = [
-        'observations',
-        'name_provider',
         'id_purchase_order',
         'users_id',
-        'id_evaluation',
+        'name_provider',
+        'observations',
+        'total_score',
+        'percentage',
+        'result'
     ];
     protected $casts = [
         'created_at' => 'datetime',
@@ -27,13 +29,7 @@ class CheckBpm extends Model
 
     public $timestamps = true;
 
-    public function evaluation()
-    {
-        return $this->hasOne(
-            Evaluation::class, 
-            'id_evaluation', 
-        );
-    }
+
 
     public function user()
     {
@@ -41,6 +37,13 @@ class CheckBpm extends Model
             User::class, 
             'users_id', 
         );
+        
+    }
+    // Relación con detalle de evaluación
+
+    public function details()
+    {
+        return $this->hasMany(TestBpmDetail::class, 'id_test_bpm');
     }
 
     public function purchaseOrder()

@@ -119,9 +119,9 @@ public function store(Request $request){
     } catch (\Exception $e) {
         DB::rollBack();
         return response()->json([
-            'error' => 'Error al guardar',
-            'details' => $e->getMessage()
-        ], 500);
+            'message' => 'Orden creada correctamente',
+            'id_purchase_order' => $purchaseOrder->id_purchase_order
+        ], 201);
     }
 }
 
