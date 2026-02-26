@@ -101,7 +101,9 @@ class TestController extends Controller
             return response()->json([
                 'message' => 'Evaluación guardada correctamente',
                 'result' => $result,
-                'percentage' => $percentage
+                'percentage' => $percentage,
+                'id' => $evaluation->id_test_bpm,
+
             ], 201);
 
         } catch (\Exception $e) {

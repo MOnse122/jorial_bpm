@@ -6,6 +6,7 @@ import axios from 'axios'
 
 const page = usePage()
 const id_purchase_order = page.props.id_purchase_order
+const id_plate = page.props.id_plate
 
 // ================= STATE =================
 
@@ -20,6 +21,7 @@ const activeTab = ref('INGRESO')
 const form = ref({
   id_purchase_order: id_purchase_order,
   name_provider: '',
+  id_plate: id_plate,
   observations: '',
   users_id: page.props.auth.user.id,
 })
@@ -30,7 +32,7 @@ onMounted(async () => {
   try {
     // 🔹 Cargar orden
     const resOrder = await axios.get(
-      `/api/purchase-order/${id_purchase_order}`
+      `/purchase-order/${id_purchase_order}`
     )
     purchaseOrder.value = resOrder.data.data ?? resOrder.data
 
@@ -134,12 +136,16 @@ const evaluate = () => {
 
 // ================= GUARDAR =================
 
-const saveTest = async () => {
+const saveTest = async (action: 'save' | 'continue') => {
 
   evaluate()
+  //pasar a mayusculas por defecto
+  form.value.name_provider = form.value.name_provider.toUpperCase()
+  form.value.observations = form.value.observations.toUpperCase()
+
 
   if (!form.value.name_provider.trim()) {
-    alert('Debes escribir el nombre del chofer')
+    alert('Debes escribir el nombre del chofer ')
     return
   }
 
@@ -152,8 +158,9 @@ const saveTest = async () => {
 
   try {
 
-    await axios.post('/api/test', {
+    const response = await axios.post('/api/test', {
       ...form.value,
+      action, 
       details: checks.value.map(c => ({
         id_criterio_detail: c.id_criterio_detail,
         sector: c.sector,
@@ -161,7 +168,11 @@ const saveTest = async () => {
       }))
     })
 
-    alert('Evaluación guardada correctamente')
+    if (action === 'continue') {
+      window.location.href = `/mil-std/${response.data.id}`
+    } else {
+      alert('Evaluación guardada correctamente')
+    }
 
   } catch (error: any) {
     console.error(error.response?.data || error)
@@ -210,6 +221,7 @@ const saveTest = async () => {
                   <span v-for="plate in purchaseOrder?.plates" :key="plate.id_plate" class="badge bg-dark-subtle text-dark border-0 small">
                     {{ plate.plate_number }}
                   </span>
+                 
                   <span v-if="!purchaseOrder?.plates?.length" class="text-muted small italic">N/A</span>
                 </div>
               </div>
@@ -315,10 +327,13 @@ const saveTest = async () => {
                 </span>
               </div>
               <div class="d-flex gap-2">
-                <button class="btn btn-outline-secondary btn-sm flex-fill">CANCELAR</button>
-                <button class="btn btn-success btn-sm flex-fill fw-bold" :disabled="loading" @click="saveTest">
-                  {{ loading ? 'GUARDANDO...' : 'GUARDAR' }}
-                </button>
+              <button @click="saveTest('save')" :disabled="loading" class="btn btn-success btn-sm flex-fill fw-bold">
+                Guardar
+              </button >
+
+              <button @click="saveTest('continue')" :disabled="loading" class="btn btn-success btn-sm flex-fill fw-bold">
+                Guardar y continuar
+              </button>
               </div>
             </div>
           </div>

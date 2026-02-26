@@ -30,26 +30,19 @@ Route::get('/providers/{id}', [ProviderController::class, 'show']);
 Route::put('/providers/{id}', [ProviderController::class, 'update']);
 Route::delete('/providers/{id}', [ProviderController::class, 'destroy']);
 
-Route::get('/purchase-order', [PurchaseOrderController::class, 'index']);
-Route::post('/purchase-order', [PurchaseOrderController::class, 'store']);
-Route::get('/purchase-order/{id}', [PurchaseOrderController::class, 'show']);
-Route::put('/purchase-order/{id}', [PurchaseOrderController::class, 'update']);
-Route::delete('/purchase-order/{id}', [PurchaseOrderController::class, 'destroy']);
-Route::get('/purchase-order/{id}/view', [PurchaseOrderController::class, 'view']);
 
 Route::get('/check/test', [TestController::class, 'index']);
 Route::put('/check/test/{id}', [TestController::class, 'update']);
 Route::delete('/check/test/{id}', [TestController::class, 'destroy']);
 Route::get('/check/test/{id}/view', [TestController::class, 'view']);
 Route::get('/check/test/{id}/criterios', [TestController::class, 'criterios']);
-
 Route::get('/test', [TestController::class, 'show']);
 Route::post('/test', [TestController::class, 'store']);
 
 
-Route::apiResource('purchase-orders', PurchaseOrderController::class);
 Route::get('/products', [ProductsController::class, 'index']);
 Route::get('/products/{id}', [ProductsController::class, 'show']);
 
+Route::apiResource('purchase-order', PurchaseOrderController::class);
+Route::apiResource('providers', ProviderController::class);
 Route::apiResource('products', ProductsController::class);
-

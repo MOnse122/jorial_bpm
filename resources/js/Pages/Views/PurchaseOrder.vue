@@ -21,6 +21,7 @@ const products = ref([])
 const loading = ref(false)
 const currentPage = ref(1)
 const pagination = ref({ total: 0, per_page: 10, current_page: 1, last_page: 1 })
+const allProducts = ref([])
 
 const filters = ref({ search: '' })
 
@@ -80,23 +81,19 @@ const removePlate = (index) => {
 }
 
 // ================== PRODUCTOS ==================
-const fetchProducts = async () => {
-  try {
-    loading.value = true
-    const params = new URLSearchParams({
-      search: filters.value.search,
-      state: filters.value.state,
-      page: currentPage.value
-    }).toString()
 
-    const response = await fetch(`http://localhost:8000/api/products?${params}`)
+const fetchProducts = async () => {
+  if (filters.value.search.length < 2) {
+    allProducts.value = []
+    return
+  }
+
+  try {
+    const response = await fetch(`http://localhost:8000/api/products?search=${filters.value.search}`)
     const data = await response.json()
-    products.value = data.data
-    pagination.value = data
+    allProducts.value = data.data || data
   } catch (err) {
-    console.error(err)
-  } finally {
-    loading.value = false
+    console.error('Error buscando productos', err)
   }
 }
 
@@ -127,20 +124,24 @@ watch(
   }
 )
 
+watch(() => filters.value.search, fetchProducts)
+
 const addProduct = (product) => {
   form.value.products.push({
-    uid: Date.now() + Math.random(),
+    uid: crypto.randomUUID(),
     id_product: product.id_product,
-    code: product.code,
-    description: product.description,
+    code: product.code || '',
+    description: product.description || '',
     unit_measure: '',
     bulk_or_roll_quantity: 0,
     individual_quantity: 0,
-    document_number: form.value.use_global_document ? form.value.document_number : '',
-    document_type: form.value.use_global_document ? form.value.document_type : '',
+    document_number: form.value.use_global_document ? form.value.global_doc_number : '',
+    document_type: form.value.use_global_document ? form.value.global_doc_type : 'FACTURA',
     non_conformity: false,
     lot: '',
   })
+  allProducts.value = []
+  filters.value.search = ''
 }
 
 const removeProduct = (uid) => {
@@ -195,7 +196,7 @@ const OrderComplete = computed(() => {
 
   for (const item of form.value.products) {
     if (!item.unit_measure || item.bulk_or_roll_quantity <= 0) return false
-    if (!form.value.use_global_document && (!item.document_type || !item.number)) return false
+    if (!form.value.use_global_document && (!item.document_type || !item.document_number)) return false
   }
 
   return true
@@ -210,290 +211,198 @@ const OrderComplete = computed(() => {
 
     <div class="container-fluid py-3 bg-lightgray rounded-3 main-scroll">
 
-      <div class="card shadow-sm mb-3 p-3 rounded-3">
-        <div class="row g-3 align-items-center">
-
+      <div class="card shadow-sm mb-3 p-3 compact-card">
+        <div class="row g-3">
+          
           <div class="col-md-2">
-            <label class="form-label fw-semibold small">Fecha</label>
+            <label class="form-label small fw-semibold text-muted">FECHA</label>
             <input type="text" class="form-control form-control-sm bg-light" :value="form.date" disabled>
           </div>
 
           <div class="col-md-3">
-            <label class="form-label fw-semibold small">Proveedor</label>
+            <label class="form-label small fw-semibold text-muted">PROVEEDOR</label>
             <select
               class="form-select form-select-sm"
               v-model="form.id_provider"
-              :class="{'border-success': form.id_provider, 'border-danger': !form.id_provider}"
+              :class="{'is-valid': form.id_provider, 'is-invalid': !form.id_provider}"
             >
               <option value="">Seleccionar proveedor</option>
               <option v-for="p in providers" :key="p.id_provider" :value="p.id_provider">{{ p.name }}</option>
             </select>
-            <small v-if="!form.id_provider" class="text-danger">Campo obligatorio</small>
           </div>
 
           <div class="col-md-2">
-            <label class="form-label fw-semibold small">Estado</label>
-            <input type="text" class="form-control form-control-sm bg-light" :value="form.state || 'N/A'" disabled>
+            <label class="form-label small fw-semibold text-muted">ESTADO</label>
+            <input type="text" class="form-control form-control-sm bg-light fw-bold text-center" :value="form.state || 'PENDIENTE'" disabled>
           </div>
 
           <div class="col-md-5">
-            <div class="d-flex align-items-center flex-wrap gap-2 mb-2">
-              <label class="form-label fw-semibold small me-2">Placas:</label>
-
+            <label class="form-label small fw-semibold text-muted">PLACAS ASIGNADAS</label>
+            <div class="d-flex flex-wrap gap-2 mb-2">
               <span v-for="(plate, index) in form.plates" :key="index"
-                    class="badge rounded-pill bg-success">
+                    class="badge bg-success rounded-pill d-flex align-items-center px-3 py-2">
                 {{ plate }}
-                <button type="button" class="btn-close btn-close-white btn-sm ms-1" @click="removePlate(index)"></button>
+                <button type="button" class="btn-close btn-close-white ms-2" style="font-size: 0.5rem" @click="removePlate(index)"></button>
               </span>
+              <small v-if="form.plates.length === 0" class="text-danger italic">No hay placas agregadas</small>
             </div>
 
-            <div class="d-flex gap-2 mb-2">
+            <div class="input-group input-group-sm">
               <select
-                class="form-select form-select-sm flex-grow-1"
-                :class="{
-                  'border-success': form.plates.length > 0,
-                  'border-danger': form.plates.length === 0 && selectedPlate !== ''
-                }"
-                :disabled="!form.id_provider"
+                class="form-select"
                 v-model="selectedPlate"
+                :disabled="!form.id_provider"
+                :class="{'is-valid': form.plates.length > 0}"
               >
-                <option value="">Seleccionar placa</option>
+                <option value="">Seleccionar placa...</option>
                 <option v-for="plate in plates" :key="plate" :value="plate">{{ plate }}</option>
-                <option value="__new__">Otra...</option>
+                <option value="__new__">Registrar otra...</option>
               </select>
 
               <input 
+                v-if="isAddingNewPlate"
                 type="text"
+                class="form-control"
                 v-model="newPlate"
-                placeholder="Nueva placa"
-                :class="{
-                  'border-success': form.plates.length > 0,
-                  'border-danger': isAddingNewPlate && !newPlate
-                }"
-                :disabled="!isAddingNewPlate"
+                placeholder="Escribir placa"
                 @keyup.enter="addPlate"
               />
 
               <button 
-                class="btn btn-sm btn-primary" 
+                class="btn btn-primary" 
+                type="button"
                 @click="addPlate" 
-                :disabled="!newPlate || !isAddingNewPlate"
+                :disabled="isAddingNewPlate ? !newPlate : !selectedPlate"
               >+</button>
             </div>
-
-            <small v-if="form.plates.length === 0 && selectedPlate !== '__new__'" class="text-danger">
-              No hay placas agregadas
-            </small>
           </div>
         </div>
 
-        <div class="row g-3 align-items-center mt-3">
-          <div class="col-md-6 d-flex align-items-center">
-            <input type="checkbox" class="form-check-input me-2" v-model="form.use_global_document">
-            <label class="small fw-semibold mb-0">Usar mismo documento para todos los productos</label>
+        <hr class="my-3 opacity-25">
+
+        <div class="row align-items-center">
+          <div class="col-md-6">
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="globalDoc" v-model="form.use_global_document">
+              <label class="form-check-label small fw-bold" for="globalDoc">
+                Usar mismo documento para todos los productos
+              </label>
+            </div>
           </div>
 
-          <div v-if="form.use_global_document" class="col-md-3">
-            <label class="form-label fw-semibold small">Tipo Doc</label>
-            <select
-              class="form-select form-select-sm"
-              v-model="form.document_type"
-              :class="{'border-success': form.document_type, 'border-danger': !form.document_type}"
-            >
-              <option value="">Seleccione</option>
-              <option v-for="d in documentTypes" :key="d.value" :value="d.value">{{ d.label }}</option>
-            </select>
-            <small v-if="!form.document_type" class="text-danger">Campo obligatorio</small>
-          </div>
-
-          <div v-if="form.use_global_document" class="col-md-3">
-            <label class="form-label fw-semibold small">Número Doc</label>
-            <input type="text"
-                  class="form-control form-control-sm"
-                  v-model="form.document_number"
-                  placeholder="Ej: 1234"
-                  :class="{'border-success': form.document_number, 'border-danger': !form.document_number}"
-            >
-            <small v-if="!form.document_number" class="text-danger">Campo obligatorio</small>
-          </div>
+          <template v-if="form.use_global_document">
+            <div class="col-md-3">
+              <div class="input-group input-group-sm">
+                <span class="input-group-text bg-white">Tipo</span>
+                <select class="form-select" v-model="form.document_type" :class="{'is-valid': form.document_type}">
+                  <option value="">Seleccione</option>
+                  <option v-for="d in documentTypes" :key="d.value" :value="d.value">{{ d.label }}</option>
+                </select>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="input-group input-group-sm">
+                <span class="input-group-text bg-white">No. Doc</span>
+                <input type="text" class="form-control" v-model="form.document_number" :class="{'is-valid': form.document_number}">
+              </div>
+            </div>
+          </template>
         </div>
-
       </div>
 
-      <div class="card shadow-sm mb-3 compact-card">
+      <div class="card shadow-sm mb-3 compact-card border-0">
         <div class="card-body py-2">
-          <label class="form-label small fw-bold">Buscar producto</label>
-          <input type="text"
-                 class="form-control form-control-sm"
-                 placeholder="Escribe para buscar..."
-                 v-model="filters.search">
+          <label class="form-label small fw-bold text-muted text-uppercase mb-1">Añadir productos a la orden</label>
+          <div class="position-relative">
+            <input type="text" class="form-control form-control-sm border-primary" 
+                   placeholder="Escriba código o descripción para buscar..." 
+                   v-model="filters.search">
+            
+            <div v-if="allProducts.length > 0" class="list-group position-absolute w-100 z-3 shadow mt-1">
+              <button v-for="p in allProducts" :key="p.id_product" 
+                      @click="addProduct(p)"
+                      class="list-group-item list-group-item-action py-2 small d-flex justify-content-between">
+                <span><strong>{{ p.code }}</strong> - {{ p.description }}</span>
+                <span class="badge bg-primary">+</span>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div class="card shadow-sm mb-3 compact-card">
-        <div class="card-body p-0">
-          <table class="table table-sm table-hover mb-0 text-center align-middle small">
-            <thead class="table-light">
-              <tr>
-                <th>Título</th>
-                <th>Clave</th>
-                <th>Descripción</th>
-                <th>Agregar</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="product in products" :key="product.id_product">
-                <td>{{ product.title }}</td>
-                <td>{{ product.code }}</td>
-                <td class="text-truncate">{{ product.description }}</td>
-                <td>
-                  <button class="btn btn-sm btn-success" @click="addProduct(product)">+</button>
-                </td>
-              </tr>
-              <tr v-if="products.length === 0">
-                <td colspan="4" class="text-muted py-2">No hay productos</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div class="card shadow-sm mb-3 compact-card">
-        <div class="card-body p-0">
-          <table class="table table-sm table-bordered mb-0 text-center align-middle small">
+      <div class="card shadow-sm mb-3 compact-card overflow-hidden">
+        <div class="table-responsive">
+          <table class="table table-sm table-bordered mb-0 text-center align-middle">
             <thead class="table-success small fw-bold">
               <tr>
                 <th>Clave</th>
                 <th>Descripción</th>
-                <th>Unidad</th>
-                <th>Bultos</th>
-                <th>Pzas</th>
-                <th>Orden</th>
-                <th>NC</th>
-                <th>Lote</th>
-                <th v-if="!form.use_global_document">Tipo Doc</th>
-                <th v-if="!form.use_global_document">No Doc</th>
-                <th></th>
+                <th width="130">Unidad</th>
+                <th width="80">Bultos</th>
+                <th width="80">Pzas</th>
+                <th width="110">Orden</th>
+                <th width="40">NC</th>
+                <th width="110">Lote</th>
+                <template v-if="!form.use_global_document">
+                  <th width="110">Tipo</th>
+                  <th width="110">No. Doc</th>
+                </template>
+                <th width="45"></th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="item in form.products" :key="item.uid">
-                <td>{{ item.code }}</td>
-                <td class="text-truncate">{{ item.description }}</td>
-
-                <!-- Unidad -->
+                <td class="fw-bold">{{ item.code }}</td>
+                <td class="text-start">
+                  <div class="text-truncate" style="max-width: 250px;" :title="item.description">
+                    {{ item.description }}
+                  </div>
+                </td>
                 <td>
-                  <select
-                    class="form-select form-select-sm"
-                    v-model="item.unit_measure"
-                    :class="{
-                      'border-success': item.unit_measure,
-                      'border-danger': !item.unit_measure
-                    }"
-                  >
+                  <select class="form-select form-select-sm" v-model="item.unit_measure" :class="{'is-invalid': !item.unit_measure}">
                     <option value="">Seleccione</option>
                     <option v-for="u in unitMeasures" :key="u.value" :value="u.value">{{ u.label }}</option>
                   </select>
                 </td>
-
-                <!-- Bultos -->
                 <td>
-                  <input
-                    type="number"
-                    class="form-control form-control-sm"
-                    v-model="item.bulk_or_roll_quantity"
-                    :class="{
-                      'border-success': item.bulk_or_roll_quantity > 0,
-                      'border-danger': item.bulk_or_roll_quantity <= 0
-                    }"
-                  />
+                  <input type="number" class="form-control form-control-sm text-center" v-model="item.bulk_or_roll_quantity">
                 </td>
-
-                <!-- Pzas -->
                 <td>
-                  <input
-                    type="number"
-                    class="form-control form-control-sm"
-                    v-model="item.individual_quantity"
-                    :class="{
-                      'border-success': item.individual_quantity > 0,
-                      'border-danger': item.individual_quantity <= 0
-                    }"
-                  />
+                  <input type="number" class="form-control form-control-sm text-center fw-bold" v-model="item.individual_quantity" :class="{'is-valid': item.individual_quantity > 0}">
                 </td>
-
-                <!-- Orden -->
                 <td>
-                  <input
-                    type="text"
-                    class="form-control form-control-sm"
-                    v-model="item.document_number"
-                    placeholder="Ej: OC-1234"
-                    :class="{
-                      'border-success': item.document_number,
-                      'border-danger': !item.document_number
-                    }"
-                  />
+                  <input type="text" class="form-control form-control-sm" v-model="item.document_number">
                 </td>
-
-                <!-- NC -->
                 <td>
-                  <input type="checkbox" class="form-check-input" v-model="item.non_conformity" />
+                  <input type="checkbox" class="form-check-input" v-model="item.non_conformity">
                 </td>
-
-                <!-- Lote -->
                 <td>
-                  <input
-                    type="text"
-                    class="form-control form-control-sm"
-                    v-model="item.lot"
-                    placeholder="Ej: LOTE-5678"
-                    :class="{
-                      'border-success': item.lot,
-                      'border-danger': !item.lot
-                    }"
-                  />
+                  <input type="text" class="form-control form-control-sm" v-model="item.lot" placeholder="Batch">
                 </td>
 
-                <!-- Tipo Doc -->
-                <td v-if="!form.use_global_document">
-                  <select
-                    v-model="item.document_type"
-                    class="form-select form-select-sm"
-                    :class="{
-                      'border-success': item.document_type,
-                      'border-danger': !item.document_type
-                    }"
-                  >
-                    <option value="">Seleccione</option>
-                    <option v-for="d in documentTypes" :key="d.value" :value="d.value">{{ d.label }}</option>
-                  </select>
-                </td>
+                <template v-if="!form.use_global_document">
+                  <td>
+                    <select class="form-select form-select-sm" v-model="item.document_type">
+                      <option value="">...</option>
+                      <option v-for="d in documentTypes" :key="d.value" :value="d.value">{{ d.label }}</option>
+                    </select>
+                  </td>
+                  <td>
+                    <input type="text" class="form-control form-control-sm" v-model="item.document_number">
+                  </td>
+                </template>
 
-                <!-- No Doc -->
-                <td v-if="!form.use_global_document">
-                  <input
-                    type="text"
-                    v-model="item.document_number"
-                    class="form-control form-control-sm"
-                    placeholder="Ej: DOC-9012"
-                    :class="{
-                      'border-success': item.document_number,
-                      'border-danger': !item.document_number
-                    }"
-                  />
-                </td>
-
-                <!-- Botón eliminar -->
                 <td>
-                  <button class="btn btn-sm btn-outline-danger" @click="removeProduct(item.uid)">
+                  <button class="btn btn-sm btn-outline-danger border-0" @click="removeProduct(item.uid)">
                     <i class="fa-solid fa-trash"></i>
                   </button>
                 </td>
               </tr>
 
               <tr v-if="form.products.length === 0">
-                <td colspan="11" class="text-muted py-2">No hay productos agregados</td>
+                <td :colspan="form.use_global_document ? 9 : 11" class="text-muted py-3">
+                  No hay productos en la lista
+                </td>
               </tr>
             </tbody>
           </table>
@@ -501,9 +410,12 @@ const OrderComplete = computed(() => {
       </div>
 
       <div class="d-flex justify-content-end gap-2">
-        <button class="btn btn-outline-secondary btn-sm" @click="goDashboard">Cancelar</button>
-        <button v-if="OrderComplete" class="btn btn-success btn-sm" @click="goTest">Guardar orden</button>
+        <button class="btn btn-outline-secondary btn-sm px-4" @click="goDashboard">Cancelar</button>
+        <button v-if="OrderComplete" class="btn btn-success btn-sm px-4 shadow-sm" @click="goTest">
+          Guardar orden
+        </button>
       </div>
+
     </div>
   </AppLayout>
 </template>
@@ -514,64 +426,80 @@ const OrderComplete = computed(() => {
   overflow-y: auto;
   padding-right: 4px;
 }
+
+/* Scroll */
 .main-scroll::-webkit-scrollbar {
   width: 6px;
 }
+
 .main-scroll::-webkit-scrollbar-thumb {
   background-color: #2d2b298a;
   border-radius: 10px;
 }
+
 .main-scroll::-webkit-scrollbar-track {
   background: transparent;
 }
 
+/* Cards */
 .compact-card {
   border: 1px solid #e5e7eb;
   border-radius: 12px;
-  transition: 0.2s ease-in-out;
-  background: white;
-}
-.compact-card:hover {
-  box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+  transition: all 0.2s ease-in-out;
+  background-color: #ffffff;
 }
 
-.table td, .table th {
+.compact-card:hover {
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+}
+
+/* ===== TABLA ===== */
+.table :deep(td),
+.table :deep(th) {
   padding: 6px !important;
   font-size: 12px;
   vertical-align: middle !important;
 }
-.table thead {
+
+.table :deep(thead) {
   font-size: 12px;
   letter-spacing: 0.3px;
 }
 
-.btn-success {
+/* ===== BOTONES ===== */
+:deep(.btn-success) {
   background-color: #009975 !important;
   border-color: #009975 !important;
   border-radius: 6px;
 }
-.btn-success:hover {
+
+:deep(.btn-success:hover) {
   background-color: #15803d !important;
   border-color: #15803d !important;
 }
-.btn-outline-danger {
+
+:deep(.btn-outline-danger) {
   border-radius: 6px;
 }
 
+/* ===== TITULO ===== */
 h2 {
   font-size: 18px;
   letter-spacing: 0.5px;
 }
+
+/* ===== BACKGROUND ===== */
 .bg-lightgray {
   background-color: #f3f4f6;
 }
 
-.is-valid {
+/* ===== VALIDACIONES ===== */
+:deep(.is-valid) {
   border-color: #22c55e !important;
   background-color: #ecfdf5 !important;
 }
 
-.is-invalid {
+:deep(.is-invalid) {
   border-color: #dc2626 !important;
   background-color: #fee2e2 !important;
 }

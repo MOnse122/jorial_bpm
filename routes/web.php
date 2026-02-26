@@ -51,14 +51,29 @@ Route::get('/purchases/puview', function () {
     return Inertia::render('Views/PUView');
 })->name('purchases.View');
 
+
 Route::get('/check/test', function () {
     return Inertia::render('Views/Test');
 })->name('test');
 
-Route::get('/purchase-order/{id}/test', function ($id) {
-    return Inertia::render('Views/Test', [
-        'id_purchase_order' => $id
+Route::get('/mil-std/{id}', function ($id) {
+    return Inertia::render('Views/mil-std', [
+        'id_test_bpm' => $id
     ]);
-})->name('purchase-order.test');
+})->name('mil-std');
+
+
+Route::middleware('auth')->group(function () {
+    Route::resource('purchase-order', PurchaseOrderController::class);
+
+    // Cambia esto:
+    Route::get('/purchase-order/{purchase_order}/test', [PurchaseOrderController::class, 'test'])
+        ->name('purchase-order.test');
+});
+
+
+
+
+
 
 require __DIR__.'/auth.php';
