@@ -28,10 +28,12 @@ const newPlate = ref('')
 const currentFolio = computed(() => orderData.value?.folio || '')
 
 /* ================== FORMULARIO REACTIVO ================== */
+
+
 const form = ref({
   id_purchase_order: orderId.value,
   date: orderData.value?.date ?? '',
-  status: orderData.value?.status ?? '',
+  status: orderData.value?.status ?? 'PENDIENTE',
   id_provider: orderData.value?.provider?.id_provider 
                ?? orderData.value?.id_provider 
                ?? '',

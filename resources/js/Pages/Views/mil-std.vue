@@ -1,7 +1,6 @@
 
 <script setup lang="ts">
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
-import { defineProps } from 'vue'
 
 const props = defineProps({
   evaluation: Object

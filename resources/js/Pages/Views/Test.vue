@@ -1,17 +1,23 @@
 <script setup lang="ts">
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { usePage } from '@inertiajs/vue3'
 import axios from 'axios'
 
-const page = usePage()
+
+/* ================= PAGE ================= */
+
+const page = usePage<any>()
+
 const id_purchase_order = page.props.id_purchase_order
 const id_plate = page.props.id_plate
+const userId = page.props.auth?.user?.id
 
-// ================= STATE =================
+/* ================= STATE ================= */
 
 const purchaseOrder = ref<any>(null)
 const checks = ref<any[]>([])
+
 const result = ref('')
 const percentage = ref(0)
 const loading = ref(false)
@@ -19,31 +25,37 @@ const loading = ref(false)
 const activeTab = ref('INGRESO')
 
 const form = ref({
-  id_purchase_order: id_purchase_order,
+  id_purchase_order,
   name_provider: '',
-  id_plate: id_plate,
+  id_plate,
   observations: '',
-  users_id: page.props.auth.user.id,
+  users_id: userId,
+  status: 'PENDIENTE1',
 })
 
-// ================= LOAD DATA =================
+/* ================= LOAD DATA ================= */
 
 onMounted(async () => {
   try {
-    // 🔹 Cargar orden
-    const resOrder = await axios.get(
-      `/purchase-order/${id_purchase_order}`
-    )
-    purchaseOrder.value = resOrder.data.data ?? resOrder.data
 
-    // 🔹 Cargar criterios
-    const res = await axios.get('/api/test')
+    // ORDEN
+    const { data: orderData } =
+      await axios.get(`/purchase-order/${id_purchase_order}`)
 
-    checks.value = res.data.map((c: any) => ({
+    purchaseOrder.value =
+      orderData.data ?? orderData
+
+    // CRITERIOS
+    const { data } = await axios.get('/api/test')
+
+    checks.value = data.map((c: any) => ({
       id_criterio_detail: c.id_criterio_detail,
       label: c.criterio.description,
       sector: c.sector,
-      value: (c.sector === 'D' || c.sector === 'E') ? '' : 'SI'
+      value:
+        (c.sector === 'D' || c.sector === 'E')
+          ? ''
+          : 'SI'
     }))
 
   } catch (error: any) {
@@ -51,7 +63,7 @@ onMounted(async () => {
   }
 })
 
-// ================= TABS =================
+/* ================= TABS ================= */
 
 const tabSectorMap: Record<string, string> = {
   INGRESO: 'A',
@@ -61,13 +73,13 @@ const tabSectorMap: Record<string, string> = {
   EXCLUSIVO: 'E'
 }
 
-const filteredChecks = computed(() => {
-  return checks.value.filter(
+const filteredChecks = computed(() =>
+  checks.value.filter(
     c => c.sector === tabSectorMap[activeTab.value]
   )
-})
+)
 
-// ================= EVALUAR =================
+/* ================= EVALUAR ================= */
 
 const sectorWeight: Record<string, number> = {
   A: 1,
@@ -85,29 +97,24 @@ const evaluate = () => {
   let hasEmpty = false
   let hasExclusiveNo = false
 
-  checks.value.forEach(c => {
+  for (const c of checks.value) {
 
-    if (c.value === '') {
+    if (!c.value) {
       hasEmpty = true
-      return
+      continue
     }
 
-    if (c.value === 'NA') {
-      return
-    }
+    if (c.value === 'NA') continue
 
-    const weight = sectorWeight[c.sector] || 0
+    const weight = sectorWeight[c.sector] ?? 0
     maxScore += weight
 
-    if (c.value === 'SI') {
+    if (c.value === 'SI')
       totalScore += weight
-    }
 
-    if (c.sector === 'E' && c.value === 'NO') {
+    if (c.sector === 'E' && c.value === 'NO')
       hasExclusiveNo = true
-    }
-
-  })
+  }
 
   if (hasEmpty) {
     result.value = 'INCOMPLETO'
@@ -121,65 +128,73 @@ const evaluate = () => {
     return
   }
 
-  if (maxScore === 0) {
+  if (!maxScore) {
     result.value = 'INCOMPLETO'
     percentage.value = 0
     return
   }
 
-  percentage.value = (totalScore / maxScore) * 100
+  percentage.value =
+    (totalScore / maxScore) * 100
 
-  if (percentage.value >= 91) result.value = 'APROBADO'
-  else if (percentage.value >= 70) result.value = 'CONDICIONAL'
-  else result.value = 'RECHAZADO'
+  if (percentage.value >= 91)
+    result.value = 'APROBADO'
+  else if (percentage.value >= 70)
+    result.value = 'CONDICIONAL'
+  else
+    result.value = 'RECHAZADO'
 }
 
-// ================= GUARDAR =================
+/* ================= GUARDAR ================= */
 
 const saveTest = async (action: 'save' | 'continue') => {
-
-  evaluate()
-  //pasar a mayusculas por defecto
-  form.value.name_provider = form.value.name_provider.toUpperCase()
-  form.value.observations = form.value.observations.toUpperCase()
-
+  evaluate(); 
 
   if (!form.value.name_provider.trim()) {
-    alert('Debes escribir el nombre del chofer ')
-    return
+    alert('Debes escribir el nombre del chofer');
+    return;
   }
 
   if (result.value === 'INCOMPLETO') {
-    alert('Debes completar todos los campos antes de guardar')
-    return
+    alert('Debes completar todos los campos antes de guardar');
+    return;
   }
 
-  loading.value = true
-
+  loading.value = true;
   try {
-
-    const response = await axios.post('/api/test', {
+    const payload = {
       ...form.value,
-      action, 
+      // FORZAMOS EL STATUS A PENDIENTE1 
+      // (Opcional: podrías enviar result.value si prefieres el resultado del test)
+      status: 'PENDIENTE1', 
+      name_provider: form.value.name_provider.toUpperCase(),
+      observations: form.value.observations.toUpperCase(),
+      action,
       details: checks.value.map(c => ({
         id_criterio_detail: c.id_criterio_detail,
         sector: c.sector,
         score: c.value
       }))
-    })
+    };
+    console.log(payload.status)
+
+    const { data } = await axios.post('/api/test', payload);
 
     if (action === 'continue') {
-      window.location.href = `/mil-std/${response.data.id}`
+      window.location.href = `/mil-std/${id_purchase_order}`;
     } else {
-      alert('Evaluación guardada correctamente')
+      alert('✅ Test guardado. El estado ahora es PENDIENTE 1');
+      // Opcional: recargar para ver el cambio
+      window.location.reload(); 
     }
 
   } catch (error: any) {
-    console.error(error.response?.data || error)
-    alert('Error al guardar evaluación')
+    console.error(error);
+    alert('Error al guardar');
+  } finally {
+    loading.value = false;
   }
 
-  loading.value = false
 }
 </script>
 
@@ -187,7 +202,9 @@ const saveTest = async (action: 'save' | 'continue') => {
   <AuthenticatedLayout>
     <template #header>
       <div class="d-flex justify-content-between align-items-center">
-        <h2 class="fw-bold mb-0 text-dark">Check In Proveedor</h2>
+        <h2 class="fw-bold mb-0 text-dark font-size=0px">
+          Check In Proveedor
+        </h2>
       </div>
     </template>
 
@@ -202,7 +219,7 @@ const saveTest = async (action: 'save' | 'continue') => {
             </div>
             <div class="text-end">
               <span class="badge px-3 py-2 rounded-pill" :class="purchaseOrder?.status === 'APROBADO' ? 'bg-success' : 'bg-warning text-dark'">
-                {{ purchaseOrder?.status || 'PENDIENTE' }}
+                {{ purchaseOrder?.status || 'Check-in bpm en proceso...' }}
               </span>
             </div>
           </div>

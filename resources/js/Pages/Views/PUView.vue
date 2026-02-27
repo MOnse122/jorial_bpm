@@ -10,39 +10,104 @@ const page = usePage()
 const orders = computed(() => page.props.orders?.data ?? [])
 
 // ================== FILTRO LOCAL ==================
-const search = ref('')
+const searchFolio = ref('')
+const searchStatus = ref('')
+const searchDate = ref('')
 
 const filteredOrders = computed(() => {
-    if (!search.value) return orders.value
 
-    return orders.value.filter(order =>
-        order.id_purchase_order?.toString().includes(search.value) ||
-        order.provider?.name?.toLowerCase().includes(search.value.toLowerCase())
-        
-    )
+  return orders.value.filter(order => {
+
+    /* ===== FOLIO ===== */
+    const matchFolio =
+      !searchFolio.value ||
+      order.folio
+        ?.toLowerCase()
+        .includes(searchFolio.value.toLowerCase())
+
+    /* ===== STATUS ===== */
+    const matchStatus =
+      !searchStatus.value ||
+      order.status === searchStatus.value
+
+    /* ===== FECHA ===== */
+    const matchDate =
+      !searchDate.value ||
+      order.date?.slice(0,10) === searchDate.value
+
+    return matchFolio && matchStatus && matchDate
+  })
 
 })
 
+const getStatusClass = (status) => {
+    if (!status) return 'bg-secondary'
 
+    const normalized = status.toUpperCase().trim()
 
-// ================== NAVEGACIÓN ==================
-const goToOrder = (id) => {
-    router.visit(`/purchase-order/${id}`)
+    const item = statusOptions.value.find(
+        s => s.value === normalized
+    )
+
+    return item?.class || 'bg-secondary'
 }
+// En tu <script setup> o data
+const statusOptions = ref([
+    { label: 'BORRADOR', value: 'PENDIENTE', class: 'bg-secondary' },
+    { label: 'CHECK BPM COMPLETO', value: 'PENDIENTE1', class: 'bg-warning text-dark' },
+    { label: 'COMPLETADA', value: 'COMPLETADA', class: 'bg-success' },
+    { label: 'CANCELADO', value: 'CANCELADA', class: 'bg-danger' },
+])
+
+const getStatusLabel = (status) => {
+    if (!status) return '---'
+
+    const normalized = status.toUpperCase().trim()
+
+    const item = statusOptions.value.find(
+        s => s.value === normalized
+    )
+
+    return item?.label || normalized
+}
+
 
 // ================== ELIMINAR ==================
 const deleteOrder = (id) => {
-    console.log(id)
     if (confirm('¿Seguro que deseas eliminar esta orden?')) {
         router.delete(`/purchase-order/${id}`, {
             preserveScroll: true,
+            onSuccess: () => {
+                console.log('Eliminado y lista refrescada');
+            }
         })
-    } try {
-        router.visit('/purchase-order', {
-            preserveScroll: true,
-        })
-    } catch (error) {
-        console.error('Error al eliminar la orden:', error)
+    }
+}
+
+const goToOrder = (order) => {
+
+    const status = order.status?.toUpperCase().trim()
+
+    switch (status) {
+
+        case 'PENDIENTE':
+            router.visit(route('purchase-order.test', {
+                purchase_order: order.id_purchase_order
+            }))
+            break
+
+        case 'PENDIENTE1':
+            router.visit(`/mil-std/${order.id_purchase_order}`)
+            break
+
+        case 'COMPLETADA':
+            router.visit(route('purchase-order.show', {
+                purchase_order: order.id_purchase_order
+            }))
+            break
+
+        default:
+            router.visit(`/purchase-order/${order.id_purchase_order}`)
     }
 }
 </script>
@@ -51,25 +116,58 @@ const deleteOrder = (id) => {
         <template #header>
             <div class="d-flex justify-content-between align-items-center w-100">
                 <h2 class="fw-bold mb-0 text-dark">Órdenes de Pedido</h2>
-
             </div>
         </template>
 
         <div class="container-fluid py-4 bg-lightgray main-scroll">
-            
             <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
-                <div class="card-header bg-white py-3 border-bottom border-light">
-                    <div class="row align-items-center">
-                        <div class="col">
-                            <h5 class="mb-0 fw-bold text-secondary">Listado de Compras</h5>
-                        </div>
-                        <div class="col-auto">
-                            <div class="input-group input-group-sm">
-                                <span class="input-group-text bg-light border-end-0"><i class="bi bi-search"></i></span>
-                                <input type="text" class="form-control bg-light border-start-0" placeholder="Filtrar orden...">
-                            </div>
-                        </div>
+                <div class="card-header bg-emerald text-white">
+                <div class="row g-2 align-items-center">
+
+                    <div class="col">
+                    <h5 class="mb-0 fw-bold text-white">
+                        Listado de Compras
+                    </h5>
                     </div>
+
+                    <!-- FILTROS -->
+                    <div class="col-auto d-flex gap-2">
+
+                    <!-- FOLIO -->
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-light border-end-0">
+                        <i class="fa-solid fa-hashtag"></i>
+                        </span>
+                        <input
+                        v-model="searchFolio"
+                        type="text"
+                        class="form-control shadow-none focus-ring-0"
+                        placeholder="Folio"
+                        >
+                    </div>
+
+                    <!-- FECHA -->
+                    <input
+                        v-model="searchDate"
+                        type="date"
+                        class="form-control form-control-sm shadow-none focus-ring-0"
+                    >
+
+                    <select v-model="searchStatus" class="form-select form-select-sm border-0 shadow-none">
+                        <option value="">Estado</option>
+
+                        <option
+                            v-for="item in statusOptions"
+                            :key="item.value"
+                            :value="item.value"
+                        >
+                            {{ item.label }}
+                        </option>
+                    </select>
+
+                    </div>
+
+                </div>
                 </div>
 
                 <div class="card-body p-0">
@@ -77,7 +175,7 @@ const deleteOrder = (id) => {
                         <table class="table table-hover align-middle mb-0">
                             <thead class="bg-light text-uppercase small fw-bold">
                                 <tr>
-                                    <th class="py-3">Proveedor</th>
+                                    <th class="py-3 ps-4">Proveedor</th>
                                     <th class="py-3 text-center">Folio</th>
                                     <th class="py-3 text-center">Fecha de Emisión</th>
                                     <th class="py-3 text-center">Estado</th>
@@ -86,72 +184,64 @@ const deleteOrder = (id) => {
                             </thead>
 
                             <tbody class="border-top-0">
-                                <tr v-if="orders.length === 0">
+                                <tr v-if="filteredOrders.length === 0">
                                     <td colspan="5" class="py-5 text-center text-muted">
                                         <div class="d-flex flex-column align-items-center">
                                             <i class="bi bi-inbox fs-1 mb-2 opacity-25"></i>
-                                            <p class="mb-0">No se encontraron órdenes registradas en el sistema.</p>
+                                            <p class="mb-0">No se encontraron órdenes registradas.</p>
                                         </div>
                                     </td>
                                 </tr>
                                 
-                                <tr v-for="order in filteredOrders" :key="order.id_purchase_order" class="order-row">
-                                    <td>
-                                        <div class="d-flex align-items-center">
-                                            <div class="avatar-sm me-3 bg-emerald-light text-emerald rounded-circle d-flex align-items-center justify-content-center fw-bold">
-                                                {{ order.provider?.name?.charAt(0) ?? 'S' }}
-                                            </div>
-                                            <div>
-                                                <div class="fw-semibold text-dark">{{ order.provider?.name ?? 'Sin proveedor' }}</div>
-                                                <div class="small text-muted text-uppercase" style="font-size: 10px;">Proveedor Verificado</div>
-                                            </div>
-                                        </div>
+                                <tr v-for="order in filteredOrders" :key="order.id_purchase_order">
+                                    <td class="ps-4">
+                                        <div class="fw-bold text-dark">{{ order.provider?.name || 'S/N' }}</div>
                                     </td>
+                                    
                                     <td class="text-center">
                                         <div class="small fw-medium text-secondary">
                                             <i class="bi bi-file-text me-1"></i> {{ order.folio }}
                                         </div>
                                     </td>
+
                                     <td class="text-center">
                                         <div class="small fw-medium text-secondary">
                                             <i class="bi bi-calendar3 me-1"></i> {{ order.date }}
                                         </div>
                                     </td>
+
                                     <td class="text-center">
-                                        <span 
+                                        <span
                                             class="badge rounded-pill px-3 py-2 fw-bold"
-                                            :class="{
-                                                'bg-success-subtle text-success border border-success': order.status === 'APROBADO',
-                                                'bg-warning-subtle text-warning-emphasis border border-warning': order.status === 'PENDIENTE',
-                                                'bg-danger-subtle text-danger border border-danger': order.status === 'RECHAZADO'
-                                            }"
+                                            :class="getStatusClass(order.status)"
                                         >
-                                            <i class="bi bi-dot"></i> {{ order.status }}
+                                            <i class="bi bi-dot me-1"></i>
+                                            {{ getStatusLabel(order.status) }}
                                         </span>
                                     </td>
-
                                     <td class="text-end pe-4">
                                         <div class="btn-group shadow-sm rounded-3">
                                             <button
                                                 v-tooltip="`Continuar`"
                                                 class="btn btn-white btn-sm border fw-bold text-primary px-3"
-                                                @click="router.visit(route('purchase-order.test', { purchase_order: order.id_purchase_order }))"
+                                                @click="goToOrder(order)"
                                             >
-                                                <i class="fa-duotone fa-solid fa-file-pen"></i>
+                                                <i class="fa-solid fa-forward fa-beat fa-sm" style="color: rgb(48, 70, 109);"></i>
                                             </button>
                                             <button
                                                 v-tooltip="`Editar OC`"
-                                                class="btn btn-white btn-sm border fw-bold text-primary px-3"
+                                                class="btn btn-white btn-sm border fw-bold text-success px-3"
                                                 @click="router.visit(`/purchase-order/${order.id_purchase_order}`)"
                                             >
-                                                <i class="fa-sharp-duotone fa-solid fa-folder-open"></i>
+                                                <!-- <i class="fa-duotone fa-solid fa-file-pen"></i> -->
+                                                <i class="fa-duotone fa-solid fa-file-pen" style="--fa-primary-color: rgb(121, 164, 112); --fa-secondary-color: rgb(121, 164, 112);"></i>
                                             </button>
                                             <button
                                                 v-tooltip="`Eliminar OC`"
                                                 class="btn btn-white btn-sm border text-danger px-3"
                                                 @click="deleteOrder(order.id_purchase_order)"
                                             >
-                                                <i class="fa-solid fa-trash""></i>
+                                                <i class="fa-solid fa-trash"></i>
                                             </button>
                                         </div>
                                     </td>
@@ -161,14 +251,14 @@ const deleteOrder = (id) => {
                     </div>
                 </div>
 
-                <div class="card-footer bg-white py-3 border-top border-light">
+                <div class="card-footer bg-emerald-light">
                     <div class="d-flex justify-content-between align-items-center small text-muted">
                         <span>Mostrando {{ orders.length }} resultados</span>
                         <nav aria-label="Page navigation">
                             <ul class="pagination pagination-sm mb-0">
                                 <li class="page-item disabled"><a class="page-link" href="#">Anterior</a></li>
-                                <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                                <li class="page-item"><a class="page-link" href="#">Siguiente</a></li>
+                                <li class="page-item active"><a class="page-link text-white bg-emerald border-color-emerald" href="#">1</a></li>
+                                <li class="page-item"><a class="page-link text-emerald" href="#">Siguiente</a></li>
                             </ul>
                         </nav>
                     </div>
@@ -195,12 +285,6 @@ const deleteOrder = (id) => {
 .text-emerald { color: #009975 !important; }
 .bg-emerald-light { background-color: #ecfdf5; }
 
-/* Avatar circular pequeño para el proveedor */
-.avatar-sm {
-    width: 35px;
-    height: 35px;
-    font-size: 14px;
-}
 
 /* Efecto en filas */
 .order-row {

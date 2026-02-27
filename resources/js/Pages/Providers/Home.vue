@@ -163,211 +163,250 @@ onMounted(fetchProviders)
 </script>
 <template>
   <AppLayout>
+
+    <!-- ================= HEADER ================= -->
     <template #header>
       <div class="d-flex justify-content-between align-items-center">
-        <h2 class="fw-bold mb-0 text-dark text-lg">Administración de Proveedores</h2>
-        <span class="badge bg-emerald-light text-emerald px-3 py-2 rounded-pill small">
-          {{ providers.length }} Proveedores Activos
-        </span>
+        <h2 class="fw-bold mb-0 text-dark">
+          Administración de Proveedores
+        </h2>
+
       </div>
     </template>
 
+
+    <!-- ================= CONTENIDO ================= -->
     <div class="container-fluid py-3 bg-lightgray main-scroll">
 
-      <div class="card shadow-sm mb-4 compact-card border-0">
-        <div class="card-header bg-emerald text-white py-3">
-          <h6 class="mb-0 fw-bold"><i class="bi bi-plus-circle me-2"></i>Registrar Nuevo Proveedor</h6>
+      <!-- ========= FORM CARD ========= -->
+      <div class="card compact-card shadow-sm mb-4 border-0">
+
+        <div class="card-header bg-emerald text-white">
+          <h6 class="mb-0 fw-bold">
+            <i class="bi bi-plus-circle me-2"></i>
+            Registrar Nuevo Proveedor
+          </h6>
         </div>
 
-        <div class="card-body py-4 px-4">
-          <form @submit.prevent="store" class="row g-3 align-items-end">
+        <div class="card-body">
+
+          <form
+            @submit.prevent="store"
+            class="row g-3 align-items-end"
+          >
 
             <div class="col-md-4">
-              <label class="form-label-small">Nombre / Razón Social</label>
+              <label class="form-label-small">
+                Nombre
+              </label>
+
               <input
                 v-model="form.name"
                 type="text"
                 class="form-control custom-input"
-                placeholder="Ej. Insumos Globales S.A."
+                placeholder="Plastic Power S.A."
                 required
               />
             </div>
 
+
             <div class="col-md-3">
-              <label class="form-label-small">Placas de Transporte</label>
+              <label class="form-label-small">
+                Placas de Transporte
+              </label>
+
               <input
                 v-model="form.plates"
-                type="text"
                 class="form-control custom-input"
                 :class="{ 'is-invalid': errors.plates }"
                 placeholder="ABC-1234, XYZ-987"
               />
+
               <div v-if="errors.plates" class="invalid-feedback">
                 {{ errors.plates[0] }}
               </div>
             </div>
 
+
             <div class="col-md-3">
-              <label class="form-label-small">Nivel de Inspección</label>
+              <label class="form-label-small">
+                Nivel de Inspección
+              </label>
+
               <select
                 v-model="form.state"
                 class="form-select custom-input"
                 required
               >
-                <option disabled value="">Seleccionar nivel...</option>
-                <option value="NORMAL">🟢 NORMAL</option>
-                <option value="REDUCIDA">🟡 REDUCIDA</option>
-                <option value="SEVERA">🔴 SEVERA</option>
+                <option disabled value="">
+                  Seleccionar nivel...
+                </option>
+                <option value="NORMAL">NORMAL</option>
+                <option value="REDUCIDA"> REDUCIDA</option>
+                <option value="SEVERA">SEVERA</option>
               </select>
             </div>
 
-            <div class="col-md-2 text-end">
-              <button class="btn btn-emerald w-100 fw-bold shadow-sm py-2">
-                <i class="bi bi-save me-1"></i> Guardar
+
+            <div class="col-md-2">
+              <button
+                class="btn btn-emerald w-100 fw-bold shadow-sm"
+              >
+                <i class="bi bi-save me-1"></i>
+                Guardar
               </button>
             </div>
 
           </form>
 
-          <div v-if="errorMessage" class="alert alert-danger-subtle mt-3 py-2 small border-danger">
-            <i class="bi bi-exclamation-triangle-fill me-2"></i> {{ errorMessage }}
+
+          <!-- ALERTAS -->
+          <div
+            v-if="errorMessage"
+            class="alert alert-danger-subtle mt-3 small"
+          >
+            {{ errorMessage }}
           </div>
 
-          <div v-if="success" class="alert alert-success-subtle mt-3 py-2 small border-success">
-            <i class="bi bi-check-circle-fill me-2"></i> {{ success }}
+          <div
+            v-if="success"
+            class="alert alert-success-subtle mt-3 small"
+          >
+            {{ success }}
           </div>
+
         </div>
       </div>
 
-      <div class="card shadow-sm compact-card border-0 overflow-hidden">
-        <div class="card-header bg-dark text-white py-3 d-flex justify-content-between align-items-center">
-          <h6 class="mb-0 fw-bold">Listado de proveedores registrados</h6>
+
+      <!-- ========= TABLE CARD ========= -->
+      <div class="card compact-card shadow-sm border-0 overflow-hidden">
+
+        <div
+          class="card-header bg-dark text-white
+                 d-flex justify-content-between align-items-center"
+        >
+          <h6 class="mb-0 fw-bold">
+            Listado de proveedores registrados
+          </h6>
+
           <i class="bi bi-filter-right fs-5"></i>
         </div>
 
+
         <div class="card-body p-0">
+
           <div class="table-responsive">
+
             <table class="table table-hover mb-0 align-middle">
-              <thead class="bg-light text-uppercase">
+
+              <thead class="bg-light">
                 <tr class="small fw-bold text-secondary">
-                  <th class="ps-4 py-3" width="30%">Proveedor</th>
-                  <th width="25%">Placas Registradas</th>
-                  <th width="20%" class="text-center">Estado</th>
-                  <th width="25%" class="text-end pe-4">Acciones</th>
+                  <th class="ps-4">Proveedor</th>
+                  <th>Placas</th>
+                  <th class="text-center">Estado</th>
+                  <th class="text-end pe-4">Acciones</th>
                 </tr>
               </thead>
 
-              <tbody class="border-top-0">
+
+              <tbody>
+
+                <!-- LOADING -->
                 <tr v-if="loading">
-                  <td colspan="4" class="py-5 text-center">
-                    <div class="spinner-border text-emerald" role="status"></div>
+                  <td colspan="4" class="text-center py-5">
+                    <div class="spinner-border text-emerald"></div>
                   </td>
                 </tr>
 
+
+                <!-- VACÍO -->
                 <tr v-else-if="providers.length === 0">
-                  <td colspan="4" class="text-muted py-5 text-center">
-                    <i class="bi bi-people fs-1 opacity-25 d-block mb-2"></i>
-                    No hay proveedores registrados actualmente
+                  <td colspan="4" class="text-center py-5 text-muted">
+                    No hay proveedores registrados
                   </td>
                 </tr>
 
-                <tr v-else v-for="p in providers" :key="p.id_provider" class="provider-row">
+
+                <!-- DATA -->
+                <tr
+                  v-else
+                  v-for="p in providers"
+                  :key="p.id_provider"
+                  class="provider-row"
+                >
+
                   <td class="ps-4">
-                    <div class="fw-bold text-dark">{{ p.name }}</div>
-                    <div class="text-muted small" style="font-size: 10px;">ID: #{{ p.id_provider }}</div>
+                    <div class="fw-bold text-dark">
+                      {{ p.name }}
+                    </div>
+                    <small class="text-muted">
+                      ID: #{{ p.id_provider }}
+                    </small>
                   </td>
+
+
                   <td>
                     <div class="d-flex flex-wrap gap-1">
-                      <span v-for="plate in p.plates" :key="plate.plate_number" class="badge bg-light text-dark border small fw-normal">
+                      <span
+                        v-for="plate in p.plates"
+                        :key="plate.plate_number"
+                        class="badge bg-light text-dark border"
+                      >
                         {{ plate.plate_number }}
                       </span>
-                      <span v-if="!p.plates?.length" class="text-muted small italic">Sin placas</span>
                     </div>
                   </td>
+
+
                   <td class="text-center">
                     <span
                       class="badge rounded-pill px-3 py-2 fw-bold"
                       :class="{
-                        'bg-success-subtle text-success border border-success': p.state === 'NORMAL',
-                        'bg-warning-subtle text-warning-emphasis border border-warning': p.state === 'REDUCIDA',
-                        'bg-danger-subtle text-danger border border-danger': p.state === 'SEVERA'
+                        'bg-success-subtle text-success border border-success': p.state==='NORMAL',
+                        'bg-warning-subtle text-warning border border-warning': p.state==='REDUCIDA',
+                        'bg-danger-subtle text-danger border border-danger': p.state==='SEVERA'
                       }"
                     >
                       {{ p.state }}
                     </span>
                   </td>
+
+
                   <td class="text-end pe-4">
-                    <div class="btn-group btn-group-sm shadow-sm rounded">
+
+                    <div class="btn-group btn-group-sm">
+
                       <button
                         class="btn btn-white border fw-semibold"
                         @click="editing = { ...p }"
                       >
-                        <i class="bi bi-pencil-square me-1 text-primary"></i> Editar
+                       <i class="fa-solid fa-pen" style="color: rgb(121, 164, 112);"></i>
                       </button>
+
                       <button
                         class="btn btn-white border"
                         @click="destroy(p.id_provider)"
                       >
-                        <i class="bi bi-trash3 text-danger"></i>
+                        <i class="fa-solid fa-trash text-danger"></i>
                       </button>
+
                     </div>
+
                   </td>
+
                 </tr>
+
               </tbody>
+
             </table>
-          </div>
-        </div>
-      </div>
-
-      <div
-        class="modal fade show d-block"
-        v-if="editing"
-        tabindex="-1"
-        style="background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px);"
-      >
-        <div class="modal-dialog modal-dialog-centered modal-sm">
-          <div class="modal-content border-0 shadow-lg rounded-4">
-
-            <div class="modal-header bg-light py-3 border-bottom-0">
-              <h6 class="modal-title fw-bold">Editar Proveedor</h6>
-              <button class="btn-close shadow-none" @click="editing = null"></button>
-            </div>
-
-            <div class="modal-body p-4">
-              <div class="mb-3">
-                <label class="form-label-small">Nombre</label>
-                <input v-model="editing.name" class="form-control custom-input" />
-              </div>
-
-              <div class="mb-3">
-                <label class="form-label-small">Placas (Separadas por coma)</label>
-                <input v-model="editing.plates" class="form-control custom-input" />
-              </div>
-
-              <div class="mb-2">
-                <label class="form-label-small">Estado / Nivel</label>
-                <select v-model="editing.state" class="form-select custom-input">
-                  <option value="NORMAL">NORMAL</option>
-                  <option value="REDUCIDA">REDUCIDA</option>
-                  <option value="SEVERA">SEVERA</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="modal-footer border-top-0 p-3">
-              <button class="btn btn-light btn-sm fw-bold px-3" @click="editing = null">
-                Cancelar
-              </button>
-              <button class="btn btn-emerald btn-sm fw-bold px-3 shadow-sm" @click="update">
-                Actualizar Cambios
-              </button>
-            </div>
 
           </div>
         </div>
       </div>
 
     </div>
+
   </AppLayout>
 </template>
 

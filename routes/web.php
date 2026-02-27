@@ -69,6 +69,7 @@ Route::middleware('auth')->group(function () {
     // Cambia esto:
     Route::get('/purchase-order/{purchase_order}/test', [PurchaseOrderController::class, 'test'])
         ->name('purchase-order.test');
+    
 });
 
 

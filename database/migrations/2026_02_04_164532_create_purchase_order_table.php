@@ -15,7 +15,7 @@ return new class extends Migration
             $table->bigIncrements('id_purchase_order');
             $table->string('folio')->unique();
             $table->date('date');
-            $table->enum('status', ['PENDIENTE', 'COMPLETADA', 'CANCELADA', 'PENDIENTE1', 'PENDIENTE2']);
+            $table->enum('status', ['PENDIENTE', 'COMPLETADA', 'CANCELADA', 'PENDIENTE1']);
 
             $table->unsignedBigInteger('id_provider');
             $table->softDeletes();

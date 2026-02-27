@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
 use App\Models\CriteriosDetails;
+use App\Models\PurchaseOrder;
 
 
 class TestController extends Controller
@@ -86,6 +87,24 @@ class TestController extends Controller
                 'result' => $result,
             ]);
 
+            $order = PurchaseOrder::find($request->id_purchase_order);
+
+            if ($order) {
+                // Actualizamos el status de la OC a PENDIENTE1
+                $order->update([
+                    'status' => $request->status ?? 'PENDIENTE1'
+                ]);
+            }elseif ($result === 'PENDIENTE') {
+                $order->update([
+                    'status' => $request->status ?? 'PENDIENTE1'
+                ]);
+            }
+            
+         
+
+            
+
+
             // 🔹 Guardar detalles usando modelo
             foreach ($request->details as $detail) {
 
@@ -133,7 +152,7 @@ class TestController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        
     }
 
     /**
