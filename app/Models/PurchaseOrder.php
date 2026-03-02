@@ -59,17 +59,17 @@ class PurchaseOrder extends Model
     {
         return $this->hasMany(OrderProduct::class, 'id_purchase_order');
     }
-    public function products()
+
+    function products()
     {
         return $this->belongsToMany(
             Product::class,
             'order_products',
-            'id_order_product',
-            'id_purchase_order',
-            'id_product'
-        )->withPivot(['quantity', 'unit_measure', 'non_conformity'])
-        ->withTimestamps();
+            'id_purchase_order', // FK hacia PurchaseOrder
+            'id_product'         // FK hacia Product
+        );
     }
 
+    
 
 }

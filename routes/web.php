@@ -6,8 +6,8 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Http\Controllers\PurchaseOrder\PurchaseOrderController;
 use App\Http\Controllers\TestController;
-
-
+use App\Http\Controllers\PurchaseOrder\MilStdController;
+use App\Models\OrderDetails;
 
 /*
 |--------------------------------------------------------------------------
@@ -56,25 +56,26 @@ Route::get('/check/test', function () {
     return Inertia::render('Views/Test');
 })->name('test');
 
-Route::get('/mil-std/{id}', function ($id) {
-    return Inertia::render('Views/mil-std', [
-        'id_test_bpm' => $id
-    ]);
-})->name('mil-std');
+
 
 
 Route::middleware('auth')->group(function () {
     Route::resource('purchase-order', PurchaseOrderController::class);
 
     // Cambia esto:
+     Route::get('/order-products/{id}', [TestController::class, 'orderProducts']);
+    
     Route::get('/purchase-order/{purchase_order}/test', [PurchaseOrderController::class, 'test'])
         ->name('purchase-order.test');
     
 });
 
+// RUTAS PARA MIL-STD
+Route::middleware('auth')->group(function () {
+    Route::get('/mil-std/api/{id_purchase_order}/products', [MilStdController::class, 'orderProducts']);
 
+    Route::get('/mil-std/{id_purchase_order}', [MilStdController::class, 'show'])->name('mil-std.index');
 
-
-
-
+    Route::get('/localM/{id_purchase_order}/{id_product}/inspection', [MilStdController::class, 'inspection'])->name('mil-std.inspection');
+});
 require __DIR__.'/auth.php';

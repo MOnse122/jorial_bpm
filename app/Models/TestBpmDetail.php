@@ -15,7 +15,6 @@ class TestBpmDetail extends Model
         'score',
     ];
 
-    // 🔹 Relación con evaluación principal
 
     public function evaluation()
     {
