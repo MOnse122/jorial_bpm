@@ -241,14 +241,16 @@ class PurchaseOrderController extends Controller
     {
         $purchaseOrder = PurchaseOrder::findOrFail($id);
 
-        $purchaseOrderStatus = $purchaseOrder->status;
-        
-        if($purchaseOrderStatus == 'PENDIENTE'){
+        if ($purchaseOrder->status === 'PENDIENTE') {
+
             $purchaseOrder->delete();
-            return response()->json(['message' => 'Orden de compra eliminada']);
+
+            return redirect()
+                ->route('purchase-order.index')
+                ->with('success', 'Orden eliminada correctamente');
         }
 
-        return response()->json(['message' => 'No se puede eliminar la orden de compra, ya que tiene datos relacionados']);
+        return redirect()->back()->with('error', 'No se puede eliminar la orden de compra porque ya inicio el proceso de inspeccion.');
 
     }
 
@@ -257,7 +259,7 @@ class PurchaseOrderController extends Controller
     {
         $order = PurchaseOrder::with(['provider', 'plates', 'details.product'])->findOrFail($id);
         
-        return inertia('Views/edit_PO', [
+        return Inertia::render('Views/edit_PO', [
             'order' => $order
         ]);
     }
@@ -281,8 +283,10 @@ class PurchaseOrderController extends Controller
             'details.*.non_conformity' => 'required|boolean',
         ]);
 
+        return redirect()
+        -> route('purchase-order.index');
 
-        return response()->json(['message' => 'Datos validados correctamente', 'data' =>  $request->all()]);
+
     }
     
 }

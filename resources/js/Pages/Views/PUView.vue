@@ -74,14 +74,14 @@ const getStatusLabel = (status) => {
 
 // ================== ELIMINAR ==================
 const deleteOrder = (id) => {
-    if (confirm('¿Seguro que deseas eliminar esta orden?')) {
-        router.delete(`/purchase-order/${id}`, {
-            preserveScroll: true,
-            onSuccess: () => {
-                console.log('Eliminado y lista refrescada');
-            }
-        })
-    }
+    if (!confirm('¿Seguro que deseas eliminar esta orden?')) return
+    
+    router.delete(`/purchase-order/${id}`, {
+        preserveScroll: true,
+        onSuccess: () => {
+            message.success('Orden eliminada correctamente')
+        }
+    })
 }
 
 const goToOrder = (order) => {
@@ -120,9 +120,19 @@ const goToOrder = (order) => {
         </template>
 
         <div class="container-fluid py-4 bg-lightgray main-scroll">
+            <div v-if="$page.props.flash.success" class="alert alert-success shadow-sm rounded-3">
+                {{ $page.props.flash.success }}
+            </div>
+
+            <div v-if="$page.props.flash.error" class="alert alert-danger shadow-sm rounded-3">
+                {{ $page.props.flash.error }}
+            </div>
+
             <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
+
                 <div class="card-header bg-emerald text-white">
                 <div class="row g-2 align-items-center">
+                    
 
                     <div class="col">
                     <h5 class="mb-0 fw-bold text-white">
@@ -236,6 +246,7 @@ const goToOrder = (order) => {
                                                 <!-- <i class="fa-duotone fa-solid fa-file-pen"></i> -->
                                                 <i class="fa-duotone fa-solid fa-file-pen" style="--fa-primary-color: rgb(121, 164, 112); --fa-secondary-color: rgb(121, 164, 112);"></i>
                                             </button>
+                                            
                                             <button
                                                 v-tooltip="`Eliminar OC`"
                                                 class="btn btn-white btn-sm border text-danger px-3"

@@ -5,7 +5,6 @@ import AppLayout from '@/Layouts/AuthenticatedLayout.vue'
 const providers = ref([])
 const loading = ref(true)
 const errorMessage = ref('')
-const editing = ref(null)
 const errors = ref({})
 const success = ref('')
 const form = ref({
@@ -25,7 +24,6 @@ const store = async () => {
     success.value = ''
     errors.value = {}
 
-    // 🔥 Convertir string a array
     const formattedPlates = form.value.plates
       ? form.value.plates
           .split(',')
@@ -96,24 +94,29 @@ const fetchProviders = async () => {
   }
 }
 
-const destroy = async (id) => {
-  try {
-    await fetch(`http://localhost:8000/api/providers/${id}`, {
-      method: 'DELETE',
-    })
-
-    providers.value = providers.value.filter(
-      p => p.id_provider !== id
-    )
-  } catch (err) {
-    console.error(err)
+const showEditModal = ref(false)
+const editing = ref({
+  id_provider: null,
+  name: '',
+  plates: '',
+  state: ''
+})
+const openEditModal = (provider) => {
+  editing.value = {
+    id_provider: provider.id_provider,
+    name: provider.name,
+    plates: provider.plates
+      ? provider.plates.map(p => p.plate_number).join(', ')
+      : '',
+    state: provider.state
   }
-    await fetchProviders()
 
+  showEditModal.value = true
 }
 
 const update = async () => {
   try {
+
     const response = await fetch(
       `http://localhost:8000/api/providers/${editing.value.id_provider}`,
       {
@@ -130,37 +133,28 @@ const update = async () => {
                 .map(p => p.trim())
                 .filter(p => p.length > 0)
             : [],
-
           state: editing.value.state,
         }),
       }
     )
 
     if (!response.ok) {
-      const error = await response.json()
-      console.error('Error update 422:', error)
+      console.error(await response.json())
       return
     }
 
-    const data = await response.json()
-
-    const index = providers.value.findIndex(
-      p => p.id_provider === data.id_provider
-    )
-
-    providers.value[index] = data
-    editing.value = null
+    showEditModal.value = false
+    await fetchProviders()
 
   } catch (err) {
     console.error(err)
   }
-
-  await fetchProviders()
 }
 
-
 onMounted(fetchProviders)
+
 </script>
+
 <template>
   <AppLayout>
 
@@ -340,9 +334,6 @@ onMounted(fetchProviders)
                     <div class="fw-bold text-dark">
                       {{ p.name }}
                     </div>
-                    <small class="text-muted">
-                      ID: #{{ p.id_provider }}
-                    </small>
                   </td>
 
 
@@ -379,16 +370,9 @@ onMounted(fetchProviders)
 
                       <button
                         class="btn btn-white border fw-semibold"
-                        @click="editing = { ...p }"
+                        @click="openEditModal(p)"
                       >
                        <i class="fa-solid fa-pen" style="color: rgb(121, 164, 112);"></i>
-                      </button>
-
-                      <button
-                        class="btn btn-white border"
-                        @click="destroy(p.id_provider)"
-                      >
-                        <i class="fa-solid fa-trash text-danger"></i>
                       </button>
 
                     </div>
@@ -405,6 +389,66 @@ onMounted(fetchProviders)
         </div>
       </div>
 
+    </div>
+
+    <!-- ================= MODAL EDITAR ================= -->
+    <div v-if="showEditModal" class="modal-backdrop-custom">
+      <div class="modal-card shadow-lg">
+
+        <div class="modal-header-custom">
+          <h5 class="fw-bold mb-0">Editar Proveedor</h5>
+          <button class="btn-close" @click="showEditModal = false"></button>
+        </div>
+
+        <div class="modal-body">
+
+          <div class="mb-3">
+            <label class="form-label-small">Nombre</label>
+            <input
+              v-model="editing.name"
+              class="form-control custom-input"
+            />
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label-small">Placas</label>
+            <input
+              v-model="editing.plates"
+              class="form-control custom-input"
+            />
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label-small">Nivel</label>
+            <select
+              v-model="editing.state"
+              class="form-select custom-input"
+            >
+              <option value="NORMAL">NORMAL</option>
+              <option value="REDUCIDA">REDUCIDA</option>
+              <option value="SEVERA">SEVERA</option>
+            </select>
+          </div>
+
+        </div>
+
+        <div class="modal-footer-custom">
+          <button
+            class="btn btn-secondary btn-sm"
+            @click="showEditModal = false"
+          >
+            Cancelar
+          </button>
+
+          <button
+            class="btn btn-emerald btn-sm fw-bold"
+            @click="update"
+          >
+            Guardar Cambios
+          </button>
+        </div>
+
+      </div>
     </div>
 
   </AppLayout>
@@ -480,5 +524,55 @@ onMounted(fetchProviders)
 
 /* Tipografía */
 h2 { font-size: 22px; letter-spacing: -0.025em; }
+
+/* ===== MODAL PERSONALIZADO ===== */
+.modal-backdrop-custom {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.modal-card {
+  background: white;
+  width: 420px;
+  border-radius: 16px;
+  overflow: hidden;
+  animation: fadeInScale 0.2s ease;
+}
+
+.modal-header-custom {
+  padding: 15px 20px;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-body {
+  padding: 20px;
+}
+
+.modal-footer-custom {
+  padding: 15px 20px;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
 </style>
  

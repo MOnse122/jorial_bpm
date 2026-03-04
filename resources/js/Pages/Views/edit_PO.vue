@@ -172,16 +172,30 @@ onMounted(async () => {
 
 const updating = ref(false)
 
-const updateOrder = () => {
+const updateOrder = (redirect = null) => {
   updating.value = true
 
-  // Limpiamos el objeto para el envío
   const payload = JSON.parse(JSON.stringify(form.value))
 
   router.put(route('purchase-order.update', orderId.value), payload, {
     onSuccess: () => {
       updating.value = false
-      alert('Orden actualizada correctamente')
+
+      if (redirect === 'dashboard') {
+        router.visit(route('dashboard'))
+      }
+
+      if (redirect === 'test') {
+        router.visit(`/purchase-order/${orderId.value}/test`)
+      }
+
+      if (redirect === 'view') {
+        router.visit(`/purchase-order`)
+      }
+
+      if (!redirect) {
+        alert('Orden actualizada correctamente')
+      }
     },
     onError: (errors) => {
       updating.value = false
@@ -200,15 +214,15 @@ const OrderComplete = computed(() => {
          form.value.products.every(p => p.unit_measure && p.bulk_or_roll_quantity > 0)
 })
 
+
+
 const unitMeasures = [
   { value: 'kg', label: 'Kilogramos' },
   { value: 'pz', label: 'Piezas' },
   { value: 'mil', label: 'Millares' },
 ]
 
-const goDashboard = () => {
-  router.visit(route('dashboard'))
-}
+
 </script>
 
 <template>
@@ -365,16 +379,33 @@ const goDashboard = () => {
       </div>
 
       <div class="d-flex justify-content-end gap-2 mt-3 pb-5">
-        <button class="btn btn-outline-secondary btn-sm px-4 shadow-sm" @click="goDashboard">
+
+        <button 
+          class="btn btn-outline-secondary btn-sm px-4 shadow-sm"
+          @click="updateOrder('dashboard')">
           Cancelar
         </button>
 
-        <button class="btn btn-success btn-sm px-4 fw-bold shadow-sm"
-                :disabled="!OrderComplete || updating"
-                @click="updateOrder">
+        <!-- Guardar -->
+        <button 
+          class="btn btn-success btn-sm px-4 fw-bold shadow-sm"
+          :disabled="!OrderComplete || updating"
+          @click="updateOrder('view')">
+
           <span v-if="updating" class="spinner-border spinner-border-sm me-1"></span>
-          {{ updating ? 'Actualizando...' : 'Guardar Cambios' }}
+          Guardar Cambios
         </button>
+
+        <!-- Guardar y continuar -->
+        <button 
+          class="btn btn-primary btn-sm px-4 fw-bold shadow-sm"
+          :disabled="!OrderComplete || updating"
+          @click="updateOrder('test')">
+
+          <span v-if="updating" class="spinner-border spinner-border-sm me-1"></span>
+          Guardar y Continuar
+        </button>
+
       </div>
 
     </div>

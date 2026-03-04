@@ -38,10 +38,12 @@ import { Head, Link } from '@inertiajs/vue3'
                   </div>
 
                   <div class="text-center">
-                    <button type="button" class="btn btn-light" style="border:none; background:transparent; cursor:pointer;" onclick="console.log('Consulta clicked')">
-                        <img src="../../../public/images/addDoc.png" class="icon-img mb-2" alt="Consulta">
-                        <div class="text-consult">*Consulta</div>
-                    </button>
+                    <Link href="/purchase-order" class="btn btn-light" style="border:none; background:transparent; cursor:pointer; text-decoration:none;">
+                        <button type="button" class="btn btn-light" style="border:none; background:transparent; cursor:pointer;" onclick="console.log('Consulta clicked')">
+                            <img src="../../../public/images/addDoc.png" class="icon-img mb-2" alt="Consulta">
+                            <div class="text-consult">*Consulta</div>
+                        </button>
+                    </Link>
                   </div>
                 </div>
 

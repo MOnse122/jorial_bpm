@@ -5,8 +5,6 @@ import axios from 'axios'
 import { useForm } from '@inertiajs/vue3'
 import { watch } from 'vue'
 
-
-
 const props = defineProps({
   id_purchase_order: [Number, String],
   id_product: [Number, String],
@@ -27,7 +25,8 @@ const form = useForm({
   nivel_inspeccion: 'G1',
   tamano_muestra: 0,
   aql: '4.0',
-  p1_medidas: '',
+  p1_ancho: '',
+  p1_largo: '',
   p2_espesor: '',
   p3_sellado: '',
   p4_desprendimiento:  0,
@@ -37,7 +36,6 @@ const form = useForm({
   disposicion_material: '',
 })
 
-/* ================= COMPUTED ================= */
 const productInfo = computed(() => {
   return orderData.value?.products?.find((p: any) => p.id_product == props.id_product)
 })
@@ -62,7 +60,7 @@ const determinarRiesgoGlobal = () => {
   } else if (impactos.every(v => v === 'GI')) {
     form.nivel_inspeccion = 'GI';
   } else {
-    form.nivel_inspeccion = 'GI'; // Valor inicial/base
+    form.nivel_inspeccion = 'GI'; 
   }
 }
 
@@ -114,7 +112,7 @@ watch(() => form.tamano_muestra, (newValue) => {
   } 
   else {
     // Caso general
-    limiteDefectos = Math.floor(muestra / 4)
+    limiteDefectos = Math.floor(muestra / 6)
   }
 
   form.se_acepta = limiteDefectos
@@ -149,6 +147,11 @@ onMounted(async () => {
   }
 })
 
+//PUNTOS DE REVISION
+
+const goDashboard = () => {
+  window.location.href = `/mil-std/${props.id_purchase_order}`;
+}
 const saveInspection = () => {
   form.post(route('mil-std.store'), {
     onSuccess: () => alert('Inspección guardada con éxito'),
@@ -168,7 +171,7 @@ const saveInspection = () => {
     <div class="container-fluid py-3 bg-lightgray main-scroll">
       <div v-if="loading" class="text-center p-5">
         <div class="spinner-border text-emerald" role="status"></div>
-        <p class="mt-2 text-muted">Sincronizando datos técnicos...</p>
+        <p class="mt-2 text-muted">Sincronizando datos...</p>
       </div>
 
       <div v-else-if="productInfo && technicalDetails">
@@ -260,7 +263,7 @@ const saveInspection = () => {
                 </thead>
                 <tbody>
                   <tr v-for="(label, key) in {
-                    impacto_trabajo: '1. IMPACTO EN EL TRABAJO, (¿PUEDE CAUSAR RETRABBAJO?, ¿PUEDE DETENER EL TRABAJO?)',
+                    impacto_trabajo: '1. IMPACTO EN EL TRABAJO, (¿PUEDE CAUSAR RETRABAJO?, ¿PUEDE DETENER EL TRABAJO?)',
                     impacto_limpieza: '2. IMPACTO EN LIMPIEZA E INOCUIDAD, (¿PUEDE ENSUCUAR EL PRODUCTO?, ¿ROMPE REGLAS DE BUENAS PRÁCTICAS DE MANUFACTURA?)',
                     impacto_entregas: '3. IMPACTO EN ENTREGAS, (¿PUEDE RETRASAR PEDIDOS O HASTA REGRESAR PEDIDOS?, ¿PUEDE AFECTAR AL CLIENTE?)'
                   }" :key="key" class="checklist-row">
@@ -272,7 +275,7 @@ const saveInspection = () => {
                 </tbody>
               </table>
             </div>
-            <h6 class="fw-bold mb-3 text-emerald"><i class="bi bi-calculator me-2"></i>RESULTADOS DEL MUESTREO (MIL-STD-105D)</h6>
+            <h6 class="fw-bold mb-3 text-emerald"><i class="bi bi-calculator me-2"></i>RESULTADOS DEL MUESTREO DEL IMPACTO GLOBAL</h6>
             <div class="row g-3 mb-4 p-3 rounded bg-light-emerald border">
               <div class="col-md-2">
                 <label class="info-label-small">Nivel Insp.</label>
@@ -322,21 +325,68 @@ const saveInspection = () => {
             </div>
             </div>
 
-            <h6 class="fw-bold mb-3 text-emerald"><i class="bi bi-list-check me-2"></i>PUNTOS DE REVISIÓN</h6>
+           <h6 class="fw-bold mb-3 text-emerald">
+            <i class="bi bi-list-check me-2"></i>REGISTRO DEL MUESTRO LOCAL
+          </h6>
+      
+
+
             <div class="row g-3 mb-4">
-              <div class="col-md-3" v-for="(label, key) in {
-                p1_medidas: 'P1. Medidas (ancho/largo)',
-                p2_espesor: 'P2. Espesor',
-                p3_sellado: 'P3. Sellado/Resistencia',
-                p4_desprendimiento: 'P4. Desprendimiento color'
-              }" :key="key">
+
+              <!-- P1 Ancho -->
+              <div class="col-md-3">
+                <label class="info-label-small">P1. Ancho</label>
+                <input 
+                  type="number" 
+                  step="0.01"
+                  class="form-control form-control-sm"
+                  v-model="form.p1_ancho"
+                  placeholder="Ej. 90"
+                />
+              </div>
+
+              <!-- P1 Largo -->
+              <div class="col-md-3">
+                <label class="info-label-small">P1. Largo</label>
+                <input 
+                  type="number" 
+                  step="0.01"
+                  class="form-control form-control-sm"
+                  v-model="form.p1_largo"
+                  placeholder="Ej. 70"
+                />
+              </div>
+
+              <!-- P2 Espesor -->
+              <div class="col-md-3">
+                <label class="info-label-small">P2. Calibre</label>
+                <input 
+                  type="number" 
+                  step="0.01"
+                  class="form-control form-control-sm"
+                  v-model="form.p2_espesor"
+                  placeholder="Ej. 250"
+                />
+              </div>
+
+              <!-- P3 y P4 siguen siendo SELECT -->
+              <div 
+                class="col-md-3" 
+                v-for="(label, key) in {
+                  p3_sellado: 'P3. Sellado/Resistencia',
+                  p4_desprendimiento: 'P4. Desprendimiento color'
+                }" 
+                :key="key"
+              >
                 <label class="info-label-small">{{ label }}</label>
                 <select class="form-select form-select-sm" v-model="form[key]">
                   <option value="">Seleccionar</option>
                   <option value="Conforme">Conforme</option>
                   <option value="No conforme">No conforme</option>
+                  <option value="No Aplica">No Aplica</option>
                 </select>
               </div>
+
             </div>
 
             <div class="row g-3 mb-4">
@@ -344,7 +394,7 @@ const saveInspection = () => {
                 <label class="info-label-small fw-bold">Resultado Final del Lote</label>
                 <select class="form-select fw-bold" :class="form.resultado_lote === 'Aprobado' ? 'text-success' : 'text-danger'" v-model="form.resultado_lote">
                   <option value="">Seleccionar Resultado</option>
-                  <option value="Aprobado">APROBADO</option>
+                  <option value="Aprobado">ACEPTADO</option>
                   <option value="Rechazado">RECHAZADO</option>
                 </select>
               </div>
@@ -352,14 +402,17 @@ const saveInspection = () => {
                 <label class="info-label-small fw-bold">Disposición del Material</label>
                 <select class="form-select" v-model="form.disposicion_material">
                   <option value="">Seleccionar Disposición</option>
-                  <option value="Uso">Uso Inmediato</option>
-                  <option value="Devolución">Devolución a Proveedor</option>
-                  <option value="Destrucción">Destrucción</option>
+                  <option value="Uso">Liberado</option>
+                  <option value="Devolución">Retenido</option>
+                  <option value="Destrucción">Rechazado</option>
+                  <option value="No Aplica">En espera de accion del proveedor</option>
                 </select>
               </div>
             </div>
 
             <div class="d-flex justify-content-end gap-2 mt-4">
+              <button class="btn btn-outline-secondary btn-sm px-4" @click="goDashboard">Cancelar</button>
+
               <button type="button" class="btn btn-outline-danger btn-sm px-3">
                 <i class="bi bi-plus-circle me-1"></i> No Conformidad
               </button>

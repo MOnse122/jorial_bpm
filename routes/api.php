@@ -44,5 +44,6 @@ Route::get('/products', [ProductsController::class, 'index']);
 Route::get('/products/{id}', [ProductsController::class, 'show']);
 
 Route::apiResource('purchase-order', PurchaseOrderController::class);
+Route::delete('/purchase-order/{id}/', [PurchaseOrderController::class, 'destroy']);
 Route::apiResource('providers', ProviderController::class);
 Route::apiResource('products', ProductsController::class);

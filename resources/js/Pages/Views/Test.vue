@@ -148,53 +148,52 @@ const evaluate = () => {
 /* ================= GUARDAR ================= */
 
 const saveTest = async (action: 'save' | 'continue') => {
-  evaluate(); 
 
-  if (!form.value.name_provider.trim()) {
-    alert('Debes escribir el nombre del chofer');
-    return;
+  evaluate()
+
+  // ✅ Validaciones primero
+  if (!form.value.name_provider?.trim()) {
+    alert('Debes escribir el nombre del chofer')
+    return
   }
 
   if (result.value === 'INCOMPLETO') {
-    alert('Debes completar todos los campos antes de guardar');
-    return;
+    alert('Debes completar todos los campos antes de guardar')
+    return
   }
 
-  loading.value = true;
+  loading.value = true
+
   try {
     const payload = {
       ...form.value,
-      // FORZAMOS EL STATUS A PENDIENTE1 
-      // (Opcional: podrías enviar result.value si prefieres el resultado del test)
-      status: 'PENDIENTE1', 
+      status: 'PENDIENTE1',
       name_provider: form.value.name_provider.toUpperCase(),
-      observations: form.value.observations.toUpperCase(),
+      observations: form.value.observations?.toUpperCase() ?? '',
       action,
       details: checks.value.map(c => ({
         id_criterio_detail: c.id_criterio_detail,
         sector: c.sector,
         score: c.value
       }))
-    };
-    console.log(payload.status)
+    }
 
-    const { data } = await axios.post('/api/test', payload);
+    const { data } = await axios.post('/api/test', payload)
 
+    // ✅ Redirección DESPUÉS de guardar
     if (action === 'continue') {
-      window.location.href = `/mil-std/${id_purchase_order}`;
+      window.location.href = `/mil-std/${id_purchase_order}`
     } else {
-      alert('✅ Test guardado. El estado ahora es PENDIENTE 1');
-      // Opcional: recargar para ver el cambio
-      window.location.reload(); 
+      alert('✅ Test guardado. El estado ahora es PENDIENTE 1')
+      window.location.href = `/purchase-order`
     }
 
   } catch (error: any) {
-    console.error(error);
-    alert('Error al guardar');
+    console.error(error)
+    alert('Error al guardar')
   } finally {
-    loading.value = false;
+    loading.value = false
   }
-
 }
 </script>
 

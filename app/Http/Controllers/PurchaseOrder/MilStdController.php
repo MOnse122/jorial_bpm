@@ -48,6 +48,8 @@ class MilStdController extends Controller
 
             return response()->json([
                 'data' => $order
+
+                
             ]);
 
         

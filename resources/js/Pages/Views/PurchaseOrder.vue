@@ -17,10 +17,6 @@ const goDashboard = () => {
 // ================== DATOS ==================
 const plates = ref([])
 const providers = ref([])
-const products = ref([])
-const loading = ref(false)
-const currentPage = ref(1)
-const pagination = ref({ total: 0, per_page: 10, current_page: 1, last_page: 1 })
 const allProducts = ref([])
 
 const filters = ref({ search: '' })
@@ -178,6 +174,18 @@ const goTest = async () => {
     const id = data.data.id_purchase_order
 
     window.location.href = `/purchase-order/${id}/test`
+
+  } catch (error) {
+    alert('No se pudo guardar la orden')
+  }
+}
+
+const goView = async () => {
+  try {
+    const data = await saveOrder()
+    console.log("RESPUESTA COMPLETA:", data)
+
+    window.location.href = `/purchase-order`
 
   } catch (error) {
     alert('No se pudo guardar la orden')
@@ -412,7 +420,10 @@ const OrderComplete = computed(() => {
       <div class="d-flex justify-content-end gap-2">
         <button class="btn btn-outline-secondary btn-sm px-4" @click="goDashboard">Cancelar</button>
         <button v-if="OrderComplete" class="btn btn-success btn-sm px-4 shadow-sm" @click="goTest">
-          Guardar orden
+          Guardar y continuar
+        </button>
+        <button v-if="OrderComplete" class="btn btn-success btn-sm px-4 shadow-sm" @click="goView">
+          Guardar
         </button>
       </div>
 

@@ -62,11 +62,12 @@ Route::get('/check/test', function () {
 Route::middleware('auth')->group(function () {
     Route::resource('purchase-order', PurchaseOrderController::class);
 
-    // Cambia esto:
      Route::get('/order-products/{id}', [TestController::class, 'orderProducts']);
+     
     
     Route::get('/purchase-order/{purchase_order}/test', [PurchaseOrderController::class, 'test'])
         ->name('purchase-order.test');
+    
     
 });
 
