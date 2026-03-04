@@ -3,30 +3,34 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 import { onMounted, ref, computed } from 'vue'
 import axios from 'axios'
 import { useForm } from '@inertiajs/vue3'
+import { watch } from 'vue'
+
+
 
 const props = defineProps({
   id_purchase_order: [Number, String],
-  id_product: [Number, String] 
+  id_product: [Number, String],
+  id_order_detail: [Number, String],
+  order_total_products: [Number, String],
+
 })
 
-/* ================= ESTADOS ================= */
 const orderData = ref<any>(null)
 const loading = ref(true)
-
-/* ================= FORMULARIO INERTIA ================= */
 const form = useForm({
   id_purchase_order: props.id_purchase_order,
   id_product: props.id_product,
+  id_order_detail: props.id_order_detail, 
   impacto_trabajo: '',
   impacto_limpieza: '',
   impacto_entregas: '',
   nivel_inspeccion: 'G1',
+  tamano_muestra: 0,
   aql: '4.0',
   p1_medidas: '',
   p2_espesor: '',
   p3_sellado: '',
-  p4_desprendimiento: '',
-  tamano_muestra: 0,
+  p4_desprendimiento:  0,
   se_acepta: 0,
   se_rechaza: 0,
   resultado_lote: '',
@@ -39,9 +43,99 @@ const productInfo = computed(() => {
 })
 
 const technicalDetails = computed(() => {
-  return orderData.value?.orderDetails?.find((d: any) => d.id_product == props.id_product)
+  return orderData.value?.orderDetails?.find(
+    (d: any) => d.id_product == props.id_product
+  )
 })
 
+const totalCalculado = computed(() => {
+  return technicalDetails.value?.total_per_product || props.order_total_products || 0
+})
+
+const determinarRiesgoGlobal = () => {
+  const impactos = [form.impacto_trabajo, form.impacto_limpieza, form.impacto_entregas];
+
+  if (impactos.includes('Alto')) {
+    form.nivel_inspeccion = 'GIII';
+  } else if (impactos.includes('Medio')) {
+    form.nivel_inspeccion = 'GII';
+  } else if (impactos.every(v => v === 'GI')) {
+    form.nivel_inspeccion = 'GI';
+  } else {
+    form.nivel_inspeccion = 'GI'; // Valor inicial/base
+  }
+}
+
+const calculateSampleSize = () => {
+  const N = Number(totalCalculado.value) || 0;
+  if (N <= 0) return form.tamano_muestra = 0;
+
+  let muestra = 0;
+  const riesgo = form.nivel_inspeccion; 
+
+  // Ajuste de coeficientes para mayor precisión matemática
+  if (riesgo === 'GIII') {
+    muestra = 0.5 * Math.pow(N, 0.6); 
+  } else if (riesgo === 'GII') {
+    muestra = 0.32 * Math.pow(N, 0.6);
+  } else {
+    muestra = .125 * Math.pow(N, 0.6);
+  }
+
+  form.tamano_muestra = Math.min(Math.ceil(muestra), N);
+  
+  if (N < 13 && form.tamano_muestra < N) {
+      form.tamano_muestra = N; 
+  }
+};
+
+
+watch(() => form.tamano_muestra, (newValue) => {
+
+  const muestra = Number(newValue) || 0
+
+  if (muestra <= 0) {
+    form.se_acepta = 0
+    form.se_rechaza = 0
+    return
+  }
+
+  const digitos = muestra.toString().length
+
+  let limiteDefectos = 0
+
+  if (digitos === 2) {
+    // 1/4 si es de 2 dígitos
+    limiteDefectos = Math.floor(muestra / 6)
+  } 
+  else if (digitos === 3) {
+    // 1/8 si es de 3 dígitos
+    limiteDefectos = Math.floor(muestra / 8)
+  } 
+  else {
+    // Caso general
+    limiteDefectos = Math.floor(muestra / 4)
+  }
+
+  form.se_acepta = limiteDefectos
+  form.se_rechaza = limiteDefectos + 3
+
+})
+
+// Escuchar cambios en los radio buttons de impacto para actualizar el riesgo y la muestra
+watch(
+  [
+    () => form.impacto_trabajo, 
+    () => form.impacto_limpieza, 
+    () => form.impacto_entregas,
+    totalCalculado
+  ], 
+  () => {
+    determinarRiesgoGlobal();
+    calculateSampleSize();
+  }, 
+  { immediate: true }
+)
 /* ================= CARGA DE DATOS ================= */
 onMounted(async () => {
   try {
@@ -71,7 +165,7 @@ const saveInspection = () => {
       </div>
     </template>
 
-    <div class="container-fluid py-3 bg-lightgray">
+    <div class="container-fluid py-3 bg-lightgray main-scroll">
       <div v-if="loading" class="text-center p-5">
         <div class="spinner-border text-emerald" role="status"></div>
         <p class="mt-2 text-muted">Sincronizando datos técnicos...</p>
@@ -92,37 +186,65 @@ const saveInspection = () => {
               </div>
             </div>
 
-            <div class="row g-2">
-              <div class="col-md-6">
-                <div class="p-2 rounded bg-lightgray border">
-                  <span class="info-label-small">Descripción del Producto</span>
-                  <span class="fw-bold text-dark d-block">{{ productInfo.title }}</span>
-                  <span class="text-muted small">SKU: {{ productInfo.code }}</span>
+            <div v-if="!loading && productInfo" class="row g-3">
+                <div class="col-md-4">
+                    <div class="card h-100 border-0 shadow-sm bg-light">
+                        <div class="card-body p-3">
+                            <small class="text-uppercase text-muted fw-bold d-block mb-1" style="font-size: 0.7rem;">
+                                Descripción del Producto
+                            </small>
+                            <h6 class="fw-bold text-dark mb-1">{{ productInfo.title }}</h6>
+                            <p class="text-muted small mb-1">{{ productInfo.description }}</p>
+                            <span class="badge bg-secondary">SKU: {{ productInfo.code }}</span>
+                        </div>
+                    </div>
                 </div>
-              </div>
-              <div class="col-md-2">
-                <div class="p-2 rounded bg-lightgray border text-center">
-                  <span class="info-label-small">Lote</span>
-                  <span class="fw-bold">{{ technicalDetails.lot }}</span>
+
+                <div class="col-md-2">
+                    <div class="card h-100 border-0 shadow-sm text-center">
+                        <div class="card-body p-3 d-flex flex-column justify-content-center">
+                            <small class="text-muted d-block mb-1">Lote</small>
+                            <span class="h5 fw-bold mb-0 text-dark">{{ technicalDetails?.lot || 'N/A' }}</span>
+                        </div>
+                    </div>
                 </div>
-              </div>
-              <div class="col-md-2">
-                <div class="p-2 rounded bg-lightgray border text-center">
-                  <span class="info-label-small">Dimensiones</span>
-                  <span class="fw-bold">{{ productInfo.width }} x {{ productInfo.height }}</span>
+
+                <div class="col-md-2">
+                    <div class="card h-100 border-0 shadow-sm text-center border-start border-3 border-dark">
+                        <div class="card-body p-3 d-flex flex-column justify-content-center">
+                            <small class="text-muted d-block mb-1">Total Unidades</small>
+                            <span class="h5 fw-bold mb-0 text-dark-2">{{ totalCalculado }}</span>
+                        </div>
+                    </div>
                 </div>
-              </div>
-              <div class="col-md-2">
-                <div class="p-2 rounded bg-lightgray border text-center">
-                  <span class="info-label-small">Calibre</span>
-                  <span class="fw-bold">{{ productInfo.cal }}</span>
+
+                <div class="col-md-2">
+                    <div class="card h-100 border-0 shadow-sm text-center">
+                        <div class="card-body p-3 d-flex flex-column justify-content-center">
+                            <small class="text-muted d-block mb-1">Dimensiones</small>
+                            <span class="fw-bold">{{ productInfo.width }} x {{ productInfo.height }}</span>
+                        </div>
+                    </div>
                 </div>
-              </div>
+
+                <div class="col-md-2">
+                    <div class="card h-100 border-0 shadow-sm text-center">
+                        <div class="card-body p-3 d-flex flex-column justify-content-center">
+                            <small class="text-muted d-block mb-1">Calibre</small>
+                            <span class="fw-bold text-dark">{{ productInfo.cal }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div v-else class="text-center p-5">
+                <div class="spinner-border text-primary" role="status"></div>
+                <p class="mt-2 text-muted">Cargando información técnica...</p>
             </div>
           </div>
         </div>
 
-        <div class="card shadow-sm compact-card mb-4 main-scroll">
+        <div class="card shadow-sm compact-card mb-4 ">
           <div class="card-body">
             
             <h6 class="fw-bold mb-3 text-emerald"><i class="bi bi-shield-check me-2 "></i>IMPACTO GLOBAL</h6>
@@ -138,9 +260,9 @@ const saveInspection = () => {
                 </thead>
                 <tbody>
                   <tr v-for="(label, key) in {
-                    impacto_trabajo: '1. IMPACTO EN EL TRABAJO',
-                    impacto_limpieza: '2. IMPACTO EN LIMPIEZA E INOCUIDAD',
-                    impacto_entregas: '3. IMPACTO EN ENTREGAS'
+                    impacto_trabajo: '1. IMPACTO EN EL TRABAJO, (¿PUEDE CAUSAR RETRABBAJO?, ¿PUEDE DETENER EL TRABAJO?)',
+                    impacto_limpieza: '2. IMPACTO EN LIMPIEZA E INOCUIDAD, (¿PUEDE ENSUCUAR EL PRODUCTO?, ¿ROMPE REGLAS DE BUENAS PRÁCTICAS DE MANUFACTURA?)',
+                    impacto_entregas: '3. IMPACTO EN ENTREGAS, (¿PUEDE RETRASAR PEDIDOS O HASTA REGRESAR PEDIDOS?, ¿PUEDE AFECTAR AL CLIENTE?)'
                   }" :key="key" class="checklist-row">
                     <td class="fw-semibold small">{{ label }}</td>
                     <td class="text-center"><input type="radio" class="form-check-input" v-model="form[key]" value="Alto" :name="key" /></td>
@@ -149,6 +271,55 @@ const saveInspection = () => {
                   </tr>
                 </tbody>
               </table>
+            </div>
+            <h6 class="fw-bold mb-3 text-emerald"><i class="bi bi-calculator me-2"></i>RESULTADOS DEL MUESTREO (MIL-STD-105D)</h6>
+            <div class="row g-3 mb-4 p-3 rounded bg-light-emerald border">
+              <div class="col-md-2">
+                <label class="info-label-small">Nivel Insp.</label>
+                <input 
+                  type="text" 
+                  disabled 
+                  class="form-control form-control-sm fw-bold text-uppercase text-center" 
+                  :class="{
+                    'bg-danger text-white': form.nivel_inspeccion === 'GIII',
+                    'bg-warning text-dark': form.nivel_inspeccion === 'GII',
+                    'bg-success text-white': form.nivel_inspeccion === 'GI'
+                  }"
+                  v-model="form.nivel_inspeccion" 
+                />
+              </div>
+              <div class="col-md-2">
+                <label class="info-label-small">AQL</label>
+                <input type="number " disabled class="form-control form-control-sm" v-model="form.aql" />
+              </div>
+             <div class="col-md-2">
+              <label class="info-label-small">Tamaño Muestra</label>
+              <input 
+                type="number" disabled
+                class="form-control form-control-sm " 
+                v-model="form.tamano_muestra" 
+              />
+            </div>
+
+            <div class="col-md-3">
+              <label class="info-label-small text-success">Se Acepta (Ac)</label>
+              <input 
+                type="number" disabled
+                class="form-control form-control-sm border-success" 
+                :value="form.se_acepta"
+                readonly
+              />
+            </div>
+
+            <div class="col-md-3">
+              <label class="info-label-small text-danger">Se Rechaza (Re)</label>
+              <input 
+                type="number" disabled
+                class="form-control form-control-sm border-danger"
+                :value="form.se_rechaza"
+                readonly
+              />
+            </div>
             </div>
 
             <h6 class="fw-bold mb-3 text-emerald"><i class="bi bi-list-check me-2"></i>PUNTOS DE REVISIÓN</h6>
@@ -165,30 +336,6 @@ const saveInspection = () => {
                   <option value="Conforme">Conforme</option>
                   <option value="No conforme">No conforme</option>
                 </select>
-              </div>
-            </div>
-
-            <h6 class="fw-bold mb-3 text-emerald"><i class="bi bi-calculator me-2"></i>RESULTADOS DEL MUESTREO (MIL-STD-105D)</h6>
-            <div class="row g-3 mb-4 p-3 rounded bg-light-emerald border">
-              <div class="col-md-2">
-                <label class="info-label-small">Nivel Insp.</label>
-                <input type="text" class="form-control form-control-sm" v-model="form.nivel_inspeccion" />
-              </div>
-              <div class="col-md-2">
-                <label class="info-label-small">AQL</label>
-                <input type="text" class="form-control form-control-sm" v-model="form.aql" />
-              </div>
-              <div class="col-md-2">
-                <label class="info-label-small">Tamaño Muestra</label>
-                <input type="number" class="form-control form-control-sm" v-model="form.tamano_muestra" />
-              </div>
-              <div class="col-md-3">
-                <label class="info-label-small text-success">Se Acepta (Ac)</label>
-                <input type="number" class="form-control form-control-sm border-success" v-model="form.se_acepta" />
-              </div>
-              <div class="col-md-3">
-                <label class="info-label-small text-danger">Se Rechaza (Re)</label>
-                <input type="number" class="form-control form-control-sm border-danger" v-model="form.se_rechaza" />
               </div>
             </div>
 
@@ -241,9 +388,9 @@ const saveInspection = () => {
 <style scoped>
 /* Estructura Principal */
 .main-scroll {
-  height: calc(100vh - 180px); /* Ajustado para que no choque con el header */
+  height: calc(99vh - 110px); 
   overflow-y: auto;
-  padding-right: 8px;
+  padding-right: 1px;
 }
 .main-scroll::-webkit-scrollbar { width: 6px; }
 .main-scroll::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 10px; }

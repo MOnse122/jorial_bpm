@@ -77,5 +77,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/mil-std/{id_purchase_order}', [MilStdController::class, 'show'])->name('mil-std.index');
 
     Route::get('/localM/{id_purchase_order}/{id_product}/inspection', [MilStdController::class, 'inspection'])->name('mil-std.inspection');
+    
+    // Route::get('/mil-std/api/{id_order_detail}/total-products', [MilStdController::class, 'totalProducts']);
 });
 require __DIR__.'/auth.php';
