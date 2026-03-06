@@ -56,29 +56,21 @@ Route::get('/check/test', function () {
     return Inertia::render('Views/Test');
 })->name('test');
 
-
-
-
 Route::middleware('auth')->group(function () {
     Route::resource('purchase-order', PurchaseOrderController::class);
-
-     Route::get('/order-products/{id}', [TestController::class, 'orderProducts']);
-     
-    
+    Route::get('/order-products/{id}', [TestController::class, 'orderProducts']);    
     Route::get('/purchase-order/{purchase_order}/test', [PurchaseOrderController::class, 'test'])
-        ->name('purchase-order.test');
-    
-    
+        ->name('purchase-order.test');  
 });
 
 // RUTAS PARA MIL-STD
 Route::middleware('auth')->group(function () {
     Route::get('/mil-std/api/{id_purchase_order}/products', [MilStdController::class, 'orderProducts']);
-
     Route::get('/mil-std/{id_purchase_order}', [MilStdController::class, 'show'])->name('mil-std.index');
-
     Route::get('/localM/{id_purchase_order}/{id_product}/inspection', [MilStdController::class, 'inspection'])->name('mil-std.inspection');
-    
-    // Route::get('/mil-std/api/{id_order_detail}/total-products', [MilStdController::class, 'totalProducts']);
+    Route::post('/localM/{id_purchase_order}/{id_product}/inspection', [MilStdController::class, 'addMilStd'])->name('mil-std.add');
+    Route::post('/inspection/{id_purchase_order}/{id_product}',[MilStdController::class, 'saveInspection'])->name('inspection.save');    
+    Route::post('/localM/{id_purchase_order}/{id_product}/local-sampling', [MilStdController::class, 'localSampling'])->name('mil-std.local-sampling');
+        
 });
 require __DIR__.'/auth.php';

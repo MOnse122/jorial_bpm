@@ -1,139 +1,105 @@
 <script setup lang="ts">
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
-import { onMounted, ref, computed } from 'vue'
+import { onMounted, ref, computed, watch } from 'vue'
 import axios from 'axios'
 import { useForm } from '@inertiajs/vue3'
-import { watch } from 'vue'
 
+/* ================= PROPS ================= */
 const props = defineProps({
   id_purchase_order: [Number, String],
   id_product: [Number, String],
-  id_order_detail: [Number, String],
   order_total_products: [Number, String],
-
 })
 
+/* ================= ESTADO ================= */
 const orderData = ref<any>(null)
 const loading = ref(true)
+
+/* ================= FORMULARIO ================= */
 const form = useForm({
+  // MIL STD
   id_purchase_order: props.id_purchase_order,
   id_product: props.id_product,
-  id_order_detail: props.id_order_detail, 
-  impacto_trabajo: '',
-  impacto_limpieza: '',
-  impacto_entregas: '',
-  nivel_inspeccion: 'G1',
-  tamano_muestra: 0,
-  aql: '4.0',
-  p1_ancho: '',
-  p1_largo: '',
-  p2_espesor: '',
-  p3_sellado: '',
-  p4_desprendimiento:  0,
-  se_acepta: 0,
-  se_rechaza: 0,
-  resultado_lote: '',
-  disposicion_material: '',
+  
+  c1: 1,
+  c2: 1,
+  c3: 1,
+  inspection_level: 'GI',
+  sample_size: 0,
+  sample_acept: 0,
+  sample_reject: 0,
+  aql: 4.0,
+
+  // Local Sampling
+  width: '',
+  length: '',
+  thickness: '',
+  piece_number: 1,
+  seal_resistance: '',
+  color_detachment: '',
+  result_lote: '',
+  result_piece: '',
+  observation: 'Nada',
 })
 
-const productInfo = computed(() => {
-  return orderData.value?.products?.find((p: any) => p.id_product == props.id_product)
-})
-
+/* ================= COMPUTED ================= */
 const technicalDetails = computed(() => {
-  return orderData.value?.orderDetails?.find(
-    (d: any) => d.id_product == props.id_product
-  )
+  return orderData.value?.orderDetails?.find((d: any) => d.id_product == props.id_product)
 })
 
 const totalCalculado = computed(() => {
   return technicalDetails.value?.total_per_product || props.order_total_products || 0
 })
 
-const determinarRiesgoGlobal = () => {
-  const impactos = [form.impacto_trabajo, form.impacto_limpieza, form.impacto_entregas];
-
-  if (impactos.includes('Alto')) {
-    form.nivel_inspeccion = 'GIII';
-  } else if (impactos.includes('Medio')) {
-    form.nivel_inspeccion = 'GII';
-  } else if (impactos.every(v => v === 'GI')) {
-    form.nivel_inspeccion = 'GI';
-  } else {
-    form.nivel_inspeccion = 'GI'; 
-  }
-}
-
-const calculateSampleSize = () => {
-  const N = Number(totalCalculado.value) || 0;
-  if (N <= 0) return form.tamano_muestra = 0;
-
-  let muestra = 0;
-  const riesgo = form.nivel_inspeccion; 
-
-  // Ajuste de coeficientes para mayor precisión matemática
-  if (riesgo === 'GIII') {
-    muestra = 0.5 * Math.pow(N, 0.6); 
-  } else if (riesgo === 'GII') {
-    muestra = 0.32 * Math.pow(N, 0.6);
-  } else {
-    muestra = .125 * Math.pow(N, 0.6);
-  }
-
-  form.tamano_muestra = Math.min(Math.ceil(muestra), N);
-  
-  if (N < 13 && form.tamano_muestra < N) {
-      form.tamano_muestra = N; 
-  }
-};
-
-
-watch(() => form.tamano_muestra, (newValue) => {
-
-  const muestra = Number(newValue) || 0
-
-  if (muestra <= 0) {
-    form.se_acepta = 0
-    form.se_rechaza = 0
-    return
-  }
-
-  const digitos = muestra.toString().length
-
-  let limiteDefectos = 0
-
-  if (digitos === 2) {
-    // 1/4 si es de 2 dígitos
-    limiteDefectos = Math.floor(muestra / 6)
-  } 
-  else if (digitos === 3) {
-    // 1/8 si es de 3 dígitos
-    limiteDefectos = Math.floor(muestra / 8)
-  } 
-  else {
-    // Caso general
-    limiteDefectos = Math.floor(muestra / 6)
-  }
-
-  form.se_acepta = limiteDefectos
-  form.se_rechaza = limiteDefectos + 3
-
+const productInfo = computed(() => {
+  return orderData.value?.products?.find((p: any) => p.id_product == props.id_product)
 })
 
-// Escuchar cambios en los radio buttons de impacto para actualizar el riesgo y la muestra
+/* ================= WATCHERS ================= */
+// Nivel de inspección
 watch(
-  [
-    () => form.impacto_trabajo, 
-    () => form.impacto_limpieza, 
-    () => form.impacto_entregas,
-    totalCalculado
-  ], 
+  [() => form.c1, () => form.c2, () => form.c3, totalCalculado],
   () => {
-    determinarRiesgoGlobal();
-    calculateSampleSize();
-  }, 
+    const impactos = [form.c1, form.c2, form.c3]
+
+    if (impactos.includes(3)) form.inspection_level = 'GIII'   // 3 = Alto
+    else if (impactos.includes(2)) form.inspection_level = 'GII' // 2 = Medio
+    else form.inspection_level = 'GI'                           // 1 = Bajo
+
+    // Tamaño de muestra
+    const N = Number(totalCalculado.value) || 0
+    let muestra = 0
+    if (form.inspection_level === 'GIII') muestra = 0.5 * Math.pow(N, 0.6)
+    else if (form.inspection_level === 'GII') muestra = 0.32 * Math.pow(N, 0.6)
+    else muestra = 0.125 * Math.pow(N, 0.6)
+
+    form.sample_size = Math.min(Math.ceil(muestra), N)
+    if (N < 13 && form.sample_size < N) form.sample_size = N
+  },
   { immediate: true }
 )
+
+
+// Ac/Re
+watch(() => form.sample_size, (N) => {
+  const muestra = Number(N) || 0
+  if (muestra <= 0) {
+    form.sample_acept = 0
+    form.sample_reject = 0
+    return
+  }
+  let ac = 0
+  if (muestra < 10) ac = 0
+  else if (muestra < 50) ac = 1
+  else if (muestra < 100) ac = 2
+  else ac = Math.floor(muestra / 20)
+
+  form.sample_acept = ac
+  form.sample_reject = ac + 3
+})
+
+// Resultado lote → accept_reject
+
 /* ================= CARGA DE DATOS ================= */
 onMounted(async () => {
   try {
@@ -141,21 +107,38 @@ onMounted(async () => {
     const response = await axios.get(`/mil-std/api/${props.id_purchase_order}/products`)
     orderData.value = response.data.data
   } catch (error) {
-    console.error("Error cargando datos:", error)
+    console.error('Error cargando datos:', error)
   } finally {
     loading.value = false
   }
 })
 
-//PUNTOS DE REVISION
 
-const goDashboard = () => {
-  window.location.href = `/mil-std/${props.id_purchase_order}`;
+/* ================= GUARDAR INSPECCIÓN ================= */
+const saveInspection = async () => {
+  // Validación mínima
+  if (!form.width || !form.length || !form.thickness || !form.seal_resistance || !form.color_detachment || !form.result_lote) {
+    alert('Completa todos los campos numéricos de la muestra')
+    return
+  }
+  try {
+    await axios.post(
+      `/inspection/${props.id_purchase_order}/${props.id_product}`,
+      form.data() // <- ¡muy importante!
+    )
+    alert('Inspección guardada correctamente')
+  } catch (error: any) {
+    console.error('Error guardando inspección:', error.response?.data || error)
+    console.log(form.data())
+    alert('Error guardando inspección: ' + (error.response?.data?.error || 'Revisa los campos'))
+  }
+  
+
 }
-const saveInspection = () => {
-  form.post(route('mil-std.store'), {
-    onSuccess: () => alert('Inspección guardada con éxito'),
-  })
+
+/* ================= IR A DASHBOARD ================= */
+const goDashboard = () => {
+  window.location.href = `/mil-std/${props.id_purchase_order}`
 }
 </script>
 
@@ -263,14 +246,25 @@ const saveInspection = () => {
                 </thead>
                 <tbody>
                   <tr v-for="(label, key) in {
-                    impacto_trabajo: '1. IMPACTO EN EL TRABAJO, (¿PUEDE CAUSAR RETRABAJO?, ¿PUEDE DETENER EL TRABAJO?)',
-                    impacto_limpieza: '2. IMPACTO EN LIMPIEZA E INOCUIDAD, (¿PUEDE ENSUCUAR EL PRODUCTO?, ¿ROMPE REGLAS DE BUENAS PRÁCTICAS DE MANUFACTURA?)',
-                    impacto_entregas: '3. IMPACTO EN ENTREGAS, (¿PUEDE RETRASAR PEDIDOS O HASTA REGRESAR PEDIDOS?, ¿PUEDE AFECTAR AL CLIENTE?)'
+                    c1: '1. IMPACTO EN EL TRABAJO, (¿PUEDE CAUSAR RETRABAJO?, ¿PUEDE DETENER EL TRABAJO?)',
+                    c2: '2. IMPACTO EN LIMPIEZA E INOCUIDAD, (¿PUEDE ENSUCUAR EL PRODUCTO?, ¿ROMPE REGLAS DE BUENAS PRÁCTICAS DE MANUFACTURA?)',
+                    c3: '3. IMPACTO EN ENTREGAS, (¿PUEDE RETRASAR PEDIDOS O HASTA REGRESAR PEDIDOS?, ¿PUEDE AFECTAR AL CLIENTE?)'
                   }" :key="key" class="checklist-row">
-                    <td class="fw-semibold small">{{ label }}</td>
-                    <td class="text-center"><input type="radio" class="form-check-input" v-model="form[key]" value="Alto" :name="key" /></td>
-                    <td class="text-center"><input type="radio" class="form-check-input" v-model="form[key]" value="Medio" :name="key" /></td>
-                    <td class="text-center"><input type="radio" class="form-check-input" v-model="form[key]" value="Bajo" :name="key" /></td>
+
+                  <td class="fw-semibold small">{{ label }}</td>
+
+                  <td class="text-center">
+                  <input type="radio" class="form-check-input" v-model.number="form[key]" :value="3" :name="key" />
+                  </td>
+
+                  <td class="text-center">
+                  <input type="radio" class="form-check-input" v-model.number="form[key]" :value="2" :name="key" />
+                  </td>
+
+                  <td class="text-center">
+                  <input type="radio" class="form-check-input" v-model.number="form[key]" :value="1" :name="key" />
+                  </td>
+
                   </tr>
                 </tbody>
               </table>
@@ -284,11 +278,11 @@ const saveInspection = () => {
                   disabled 
                   class="form-control form-control-sm fw-bold text-uppercase text-center" 
                   :class="{
-                    'bg-danger text-white': form.nivel_inspeccion === 'GIII',
-                    'bg-warning text-dark': form.nivel_inspeccion === 'GII',
-                    'bg-success text-white': form.nivel_inspeccion === 'GI'
+                    'bg-danger text-white': form.inspection_level === 'GIII',
+                    'bg-warning text-dark': form.inspection_level === 'GII',
+                    'bg-success text-white': form.inspection_level === 'GI'
                   }"
-                  v-model="form.nivel_inspeccion" 
+                  v-model="form.inspection_level" 
                 />
               </div>
               <div class="col-md-2">
@@ -300,7 +294,7 @@ const saveInspection = () => {
               <input 
                 type="number" disabled
                 class="form-control form-control-sm " 
-                v-model="form.tamano_muestra" 
+                v-model="form.sample_size" 
               />
             </div>
 
@@ -309,7 +303,7 @@ const saveInspection = () => {
               <input 
                 type="number" disabled
                 class="form-control form-control-sm border-success" 
-                :value="form.se_acepta"
+                :value="form.sample_acept"
                 readonly
               />
             </div>
@@ -319,7 +313,7 @@ const saveInspection = () => {
               <input 
                 type="number" disabled
                 class="form-control form-control-sm border-danger"
-                :value="form.se_rechaza"
+                :value="form.sample_reject"
                 readonly
               />
             </div>
@@ -340,7 +334,7 @@ const saveInspection = () => {
                   type="number" 
                   step="0.01"
                   class="form-control form-control-sm"
-                  v-model="form.p1_ancho"
+                  v-model="form.width"
                   placeholder="Ej. 90"
                 />
               </div>
@@ -352,7 +346,7 @@ const saveInspection = () => {
                   type="number" 
                   step="0.01"
                   class="form-control form-control-sm"
-                  v-model="form.p1_largo"
+                  v-model="form.length"
                   placeholder="Ej. 70"
                 />
               </div>
@@ -364,7 +358,7 @@ const saveInspection = () => {
                   type="number" 
                   step="0.01"
                   class="form-control form-control-sm"
-                  v-model="form.p2_espesor"
+                  v-model="form.thickness"
                   placeholder="Ej. 250"
                 />
               </div>
@@ -373,8 +367,8 @@ const saveInspection = () => {
               <div 
                 class="col-md-3" 
                 v-for="(label, key) in {
-                  p3_sellado: 'P3. Sellado/Resistencia',
-                  p4_desprendimiento: 'P4. Desprendimiento color'
+                  seal_resistance: 'P3. Sellado/Resistencia',
+                  color_detachment: 'P4. Desprendimiento color'
                 }" 
                 :key="key"
               >
@@ -392,20 +386,27 @@ const saveInspection = () => {
             <div class="row g-3 mb-4">
               <div class="col-md-6">
                 <label class="info-label-small fw-bold">Resultado Final del Lote</label>
-                <select class="form-select fw-bold" :class="form.resultado_lote === 'Aprobado' ? 'text-success' : 'text-danger'" v-model="form.resultado_lote">
+                <select 
+                  class="form-select fw-bold shadow-sm" 
+                  :class="{
+                    'border-success text-success bg-light-success': form.result_lote === 'Aprobado',
+                    'border-danger text-danger bg-light-danger': form.result_lote === 'Rechazado'
+                  }" 
+                  v-model="form.result_lote"
+                >
                   <option value="">Seleccionar Resultado</option>
-                  <option value="Aprobado">ACEPTADO</option>
-                  <option value="Rechazado">RECHAZADO</option>
+                  <option value="APROBADO">✅ ACEPTADO (DENTRO DE AQL)</option>
+                  <option value="RECHAZADO"> RECHAZADO (FUERA DE LÍMITE)</option>
                 </select>
               </div>
               <div class="col-md-6">
                 <label class="info-label-small fw-bold">Disposición del Material</label>
-                <select class="form-select" v-model="form.disposicion_material">
+                <select class="form-select" v-model="form.result_piece">
                   <option value="">Seleccionar Disposición</option>
-                  <option value="Uso">Liberado</option>
-                  <option value="Devolución">Retenido</option>
-                  <option value="Destrucción">Rechazado</option>
-                  <option value="No Aplica">En espera de accion del proveedor</option>
+                  <option value="1">Liberado</option>
+                  <option value="2">Retenido</option>
+                  <option value="3">Rechazado</option>
+                  <option value="4">En espera de accion del proveedor</option>
                 </select>
               </div>
             </div>

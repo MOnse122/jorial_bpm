@@ -4,36 +4,42 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\OrderDetails;
 
 class MilStd extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory;
 
     protected $table = 'mil_stds';
     protected $primaryKey = 'id_mil_std';
 
     protected $fillable = [
-        'id_test_bpm',
+        'id_purchase_order',
+        'id_product',
+        'c1',
+        'c2',
+        'c3',
         'inspection_level',
         'sample_size',
-        'result',
-        'material_disposition',
+        'sample_acept',
+        'sample_reject',
+        
         'aql',
-        'accept_reject'
-
     ];
 
-    protected $casts = [
-        'date' => 'date',
-    ];
-
-
-    public function testBpm()
+    public function orderDetail()
     {
         return $this->belongsTo(
-            CheckBpm::class,
-            'id_test_bpm'
+            OrderDetails::class,
+            'id_order_detail'
+        );
+    }
+
+    public function samplings()
+    {
+        return $this->hasMany(
+            LocalSampling::class,
+            'id_mil_std'
         );
     }
 }

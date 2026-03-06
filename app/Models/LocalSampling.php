@@ -22,8 +22,10 @@ class LocalSampling extends Model
         'seal_resistance',
         'color_detachment',
         'piece_number',
-        'result',
+        'result_lote',
+        'result_piece',
         'observation',
+        
     ];
 
     public function milStd()

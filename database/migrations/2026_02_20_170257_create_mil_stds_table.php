@@ -13,22 +13,26 @@ return new class extends Migration
     {
         Schema::create('mil_stds', function (Blueprint $table) {
             $table->bigIncrements('id_mil_std');
+            $table->unsignedBigInteger('id_purchase_order');
 
-            $table->unsignedBigInteger('id_test_bpm');
+            $table->unsignedBigInteger('id_product');
+
+            $table->enum('c1', ['1', '2', '3']);
+            $table->enum('c2', ['1', '2', '3']);
+            $table->enum('c3', ['1', '2', '3']);
 
             $table->string('inspection_level', 20);
             $table->decimal('aql', 4, 2);
-            $table->enum('accept_reject', ['ACCEPT', 'REJECT']);
             $table->integer('sample_size');
-            $table->enum('result', ['PASS', 'FAIL']);
-            $table->string('material_disposition', 100);
+            $table->decimal('sample_acept', 8, 2);
+            $table->decimal('sample_reject', 8, 2);
 
             $table->timestamps();
 
-            $table->foreign('id_test_bpm')
-                ->references('id_test_bpm')
-                ->on('test_bpms');
-            $table->softDeletes();
+            $table->foreign('id_product')
+                ->references('id_product')
+                ->on('products')
+                ->onDelete('cascade');
 
         });
     }

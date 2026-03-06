@@ -20,17 +20,22 @@ return new class extends Migration
             $table->decimal('length', 8, 2);
             $table->decimal('thickness', 6, 2);
 
-            $table->boolean('seal_resistance');
-            $table->boolean('color_detachment');
+            $table->string('seal_resistance', 25);
+            $table->string('color_detachment', 25);
 
             $table->integer('piece_number');
 
-            $table->enum('result', ['PASS', 'FAIL']);
+            $table->enum('result_lote', ['APROBADO', 'RECHAZADO']);
+            $table->enum('result_piece', ['1', '2', '3', '4']);
             $table->text('observation')->nullable();
 
             $table->timestamps();
 
-            $table->foreign('id_mil_std')->references('id_mil_std')->on('mil_stds')->onDelete('cascade');
+            $table->foreign('id_mil_std')
+            ->references('id_mil_std')
+            ->on('mil_stds'
+            )->onDelete('cascade');
+            
             $table->softDeletes();
 
         });

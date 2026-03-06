@@ -67,6 +67,14 @@ class OrderDetails extends Model
             'id_order_product'
         );
     }
-
+    
+    public function milStd()
+    {
+        return $this->hasOne(
+            MilStd::class,
+            'id_order_detail',
+            'id_order_detail'
+        );
+    }
 
 }

@@ -5,107 +5,211 @@ namespace App\Http\Controllers\PurchaseOrder;
 use App\Http\Controllers\Controller;
 use App\Models\OrderDetails;
 use App\Models\PurchaseOrder;
-use Inertia\Inertia;
+use App\Models\MilStd;
+use App\Models\LocalSampling;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-
-
+use Inertia\Inertia;
 
 class MilStdController extends Controller
 {
-    // Esta función maneja AMBAS vistas: la lista y la inspección individual
-    public function show($id_purchase_order, $id_product = null) 
+
+    public function show($id_purchase_order, $id_product = null)
     {
         return Inertia::render('Views/mil-std', [
             'id_purchase_order' => $id_purchase_order,
-            'id_product'        => $id_product // Puede ser null, y está bien
+            'id_product'        => $id_product
         ]);
     }
 
-        public function orderProducts($id_purchase_order)
-        {
-            // 1. Buscamos la orden con sus productos relacionados
-            $order = PurchaseOrder::with('products')
-                ->where('id_purchase_order', $id_purchase_order)
-                ->first();
+    public function orderProducts($id_purchase_order)
+    {
+        $order = PurchaseOrder::with('products')
+            ->where('id_purchase_order', $id_purchase_order)
+            ->first();
 
-            if (!$order) {
-                return response()->json(['error' => 'Orden no encontrada'], 404);
-            }
+        if (!$order) {
+            return response()->json(['error' => 'Orden no encontrada'], 404);
+        }
 
-            // 2. Buscamos los detalles y añadimos el cálculo dinámicamente
-            $orderDetails = OrderDetails::where('id_purchase_order', $id_purchase_order)
-                ->get()
-                ->map(function ($detail) {
-                    // Creamos un atributo nuevo con el resultado de la multiplicación
-                    $detail->total_per_product = $detail->individual_quantity * $detail->bulk_or_roll_quantity;
-                    return $detail;
-                });
+        $orderDetails = OrderDetails::where('id_purchase_order', $id_purchase_order)
+            ->get()
+            ->map(function ($detail) {
+                $detail->total_per_product =
+                    $detail->individual_quantity * $detail->bulk_or_roll_quantity;
+                return $detail;
+            });
 
-            
-            // 3. Inyectamos los detalles calculados
-            $order->orderDetails = $orderDetails;
+        $order->orderDetails = $orderDetails;
+
+        return response()->json([
+            'data' => $order
+        ]);
+    }
+
+
+    public function inspection($id_purchase_order, $id_product)
+    {
+        $order = PurchaseOrder::with('products')
+            ->where('id_purchase_order', $id_purchase_order)
+            ->first();
+
+        if (!$order) {
+            return response()->json(['error' => 'Orden no encontrada'], 404);
+        }
+
+        return Inertia::render('Views/localM', [
+            'id_purchase_order' => $id_purchase_order,
+            'id_product'        => $id_product,
+        ]);
+    }
+
+
+    /**
+     * Guardar MIL STD
+     */
+    public function addMilStd(Request $request, string $id_purchase_order, string $id_product)
+    {
+
+        $validated = $request->validate([
+            'c1'               => 'nullable|integer',
+            'c2'               => 'nullable|integer',
+            'c3'               => 'nullable|integer',
+            'inspection_level' => 'required|string',
+            'sample_size'      => 'required|integer',
+            'sample_acept'     => 'required|integer',
+            'sample_reject'    => 'required|integer',
+            'aql'              => 'required|numeric',
+        ]);
+
+        try {
+
+            $milStd = MilStd::updateOrCreate(
+                [
+                    'id_purchase_order' => $id_purchase_order,
+                    'id_product'        => $id_product,
+                ],
+                $validated
+            );
 
             return response()->json([
-                'data' => $order
+                'message' => 'MilStd guardado con éxito',
+                'milStd'  => $milStd
+            ], 201);
 
-                
-            ]);
-
-        
-
-
-        }
-
-        //Buscar la purchase order y asociarla a la Order details
-        
-        // 1. Buscamos la orden
-        public function inspection($id_purchase_order, $id_order_detail)
-        {
-            $order = PurchaseOrder::with('products')
-                ->where('id_purchase_order', $id_purchase_order)
-                ->first();
-
-            if (!$order) {
-                return response()->json(['error' => 'Orden no encontrada'], 404);
-            }
+        } catch (\Exception $e) {
 
             return Inertia::render('Views/localM', [
-                'id_purchase_order'      => $id_purchase_order,
-                'id_product'             => $id_order_detail,
+                'id_purchase_order' => $id_purchase_order,
+                'id_product'        => $id_product,
             ]);
         }
-
-        // //CANTIDAD COMPLETA DE PRODUCTOS EN LA ORDEN
-        // public function totalProducts($id_order_detail)
-        // {
-        //     $order = OrderDetails::where('id_order_detail', $id_order_detail)
-        //     ->sum(DB::raw('individual_quantity * bulk_or_roll_quantity'));
-                
-        //     return response()->json([
-        //         'total_products' => $order
-                
-        //     ]);
-
-        //     try {
-        //         $order = OrderDetails::where('id_order_detail', $id_order_detail)
-        //         ->sum(DB::raw('individual_quantity * bulk_or_roll_quantity'));
-        //     } catch (\Throwable $th) {
-        //         return response()->json([
-        //             'error' => 'Error al calcular la cantidad total de productos'
-        //         ], 500);
-        //     }
-
-        //     return response()->json([
-        //         'total_products' => $order
-        //     ]);
-           
-        // }
-
-       
+    }
 
 
+    /**
+     * Guardar muestreo local
+     */
+    public function localSampling(Request $request, string $id_mil_std, string $id_purchase_order, string $id_product)
+    {
 
+        $validated = $request->validate([
+            'width'             => 'required|numeric',
+            'length'            => 'required|numeric',
+            'thickness'         => 'required|numeric',
+            'seal_resistance'   => 'required|string',
+            'color_detachment'  => 'required|string',
+            'piece_number'      => 'required|integer',
+            'result_lote'       => 'required|string',
+            'result_piece'      => 'required|string',
+            'observation'       => 'nullable|string',
+        ]);
+
+        try {
+
+            $sampling = LocalSampling::updateOrCreate(
+                [
+                    'id_mil_std' => $id_mil_std,
+                    
+                    'piece_number' => $validated['piece_number']
+                ],
+                $validated
+            );
+
+            return response()->json([
+                'message' => 'LocalSampling guardado con éxito',
+                'sampling' => $sampling
+            ], 201);
+
+        } catch (\Exception $e) {
+
+            return Inertia::render('Views/localM', [
+                'id_purchase_order' => $id_purchase_order,
+                'id_product'        => $id_product,
+            ]);
+        }
+    }
+
+    public function saveInspection(Request $request, string $id_purchase_order, string $id_product)
+    {
+
+        // 1️⃣ Validar MIL STD
+        $milStdData = $request->validate([
+            'c1'               => 'nullable|integer',
+            'c2'               => 'nullable|integer',
+            'c3'               => 'nullable|integer',
+            'inspection_level' => 'required|string',
+            'sample_size'      => 'required|integer',
+            'sample_acept'     => 'required|integer',
+            'sample_reject'    => 'required|integer',
+            'aql'              => 'required|numeric',
+        ]);
+
+        // 2️⃣ Validar Local Sampling
+        $samplingData = $request->validate([
+            'width'            => 'required|numeric',
+            'length'           => 'required|numeric',
+            'thickness'        => 'required|numeric',
+            'seal_resistance'  => 'required|string',
+            'color_detachment' => 'required|string',
+            'piece_number'     => 'required|integer',
+            'result_lote'      => 'required|string',
+            'result_piece'     => 'required|string',
+            'observation'      => 'nullable|string',
+        ]);
+
+        try {
+
+            // Guardar MIL STD
+            $milStd = MilStd::updateOrCreate(
+                [
+                    'id_purchase_order' => $id_purchase_order,
+                    'id_product'        => $id_product,
+                ],
+                $milStdData
+            );
+
+            // Guardar Local Sampling
+            LocalSampling::updateOrCreate(
+                [
+                    'id_mil_std'   => $milStd->id_mil_std,
+                    'piece_number' => $samplingData['piece_number']
+                ],
+                array_merge($samplingData, [
+                    'id_mil_std' => $milStd->id_mil_std
+                ])
+            );
+
+            return response()->json([
+                'message' => 'Inspección guardada correctamente'
+            ]);
+
+        } catch (\Exception $e) {
+
+            return response()->json([
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
     /**
      * Update the specified resource in storage.
      */
