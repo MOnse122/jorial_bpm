@@ -151,7 +151,6 @@ const saveTest = async (action: 'save' | 'continue') => {
 
   evaluate()
 
-  // ✅ Validaciones primero
   if (!form.value.name_provider?.trim()) {
     alert('Debes escribir el nombre del chofer')
     return
@@ -180,11 +179,9 @@ const saveTest = async (action: 'save' | 'continue') => {
 
     const { data } = await axios.post('/api/test', payload)
 
-    // ✅ Redirección DESPUÉS de guardar
     if (action === 'continue') {
       window.location.href = `/mil-std/${id_purchase_order}`
     } else {
-      alert('✅ Test guardado. El estado ahora es PENDIENTE 1')
       window.location.href = `/purchase-order`
     }
 

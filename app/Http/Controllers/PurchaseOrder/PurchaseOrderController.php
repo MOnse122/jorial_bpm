@@ -93,6 +93,7 @@ class PurchaseOrderController extends Controller
                     'individual_quantity' => $product['individual_quantity'] ?? 0,
                     'lot' => $product['lot'] ?? null,
                     'non_conformity' => $product['non_conformity'] ?? false,
+                    'num_order' => $product['num_order'] ?? null,
                 ]);
 
                 //  OrderProducts
@@ -167,6 +168,8 @@ class PurchaseOrderController extends Controller
             'date' => 'required|date',
             'id_provider' => 'required|exists:providers,id_provider',
             'products' => 'required|array|min:1',
+            'plates' => 'nullable|array|min:1',
+            'num_order' => 'nullable|string',
         ]);
 
         DB::beginTransaction();
@@ -212,6 +215,7 @@ class PurchaseOrderController extends Controller
                         'document_number' => $product['document_number'] ?? null,
                         'document_type' => $product['document_type'] ?? 'FACTURA',
                         'non_conformity' => $product['non_conformity'] ?? false,
+                        'num_order' => $product['num_order'] ?? null,
                     ]
                 );
 
@@ -223,6 +227,9 @@ class PurchaseOrderController extends Controller
                     [
                         'document_number' => $product['document_number'] ?? null,
                         'document_type' => $product['document_type'] ?? 'FACTURA',
+                        'non_conformity' => $product['non_conformity'] ?? false,
+                        'num_order' => $product['num_order'] ?? null,
+
                     ]
                 );
             }

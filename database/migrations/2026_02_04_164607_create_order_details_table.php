@@ -21,6 +21,8 @@ return new class extends Migration
             $table->string('lot', 50)->nullable();
             $table->string('unit_measure', 20);
             $table->string('document_number', 255)->nullable();
+            $table->string('num_order', 50)->nullable();
+
             $table->string('document_type', 50)->nullable();
 
             $table->integer('bulk_or_roll_quantity');

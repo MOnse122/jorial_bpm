@@ -39,6 +39,7 @@ class PurchaseOrderResource extends JsonResource
                     'non_conformity' => $detail->non_conformity,
                     'document_number' => $detail->document_number ?? '',
                     'document_type' => $detail->document_type ?? '',
+                    'num_order' => $detail->num_order ?? '',
 
                     'product' => $detail->product ? [
                         'id_product' => $detail->product->id_product,

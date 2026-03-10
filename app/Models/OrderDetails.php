@@ -20,6 +20,7 @@ class OrderDetails extends Model
         'unit_measure',
         'bulk_or_roll_quantity',
         'individual_quantity',
+        'num_order',
         'non_conformity',
         'document_number',
         'document_type',

@@ -82,6 +82,11 @@ const deleteOrder = (id) => {
             message.success('Orden eliminada correctamente')
         }
     })
+    if (order.status !== 'PENDIENTE') {
+        router.visit(route('purchase-order.show', {
+            purchase_order: order.id_purchase_order
+        }))
+    }
 }
 
 const goToOrder = (order) => {

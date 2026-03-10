@@ -153,6 +153,30 @@ const update = async () => {
 
 onMounted(fetchProviders)
 
+const deleteProvider = async (id_provider) => {
+  try {
+    const response = await fetch(
+      `http://localhost:8000/api/providers/${id_provider}`,
+      {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+      }
+    )
+
+    if (!response.ok) {
+      console.error(await response.json())
+      return
+    }
+
+    await fetchProviders()
+  } catch (err) {
+    console.error(err)
+  }
+}
+
 </script>
 
 <template>
@@ -373,6 +397,13 @@ onMounted(fetchProviders)
                         @click="openEditModal(p)"
                       >
                        <i class="fa-solid fa-pen" style="color: rgb(121, 164, 112);"></i>
+                      </button>
+
+                      <button
+                        class="btn btn-white border fw-semibold"
+                        @click="deleteProvider(p.id_provider)"
+                      >
+                        <i class="fa-solid fa-trash" style="color: rgb(230, 102, 102);"></i>
                       </button>
 
                     </div>
