@@ -240,8 +240,8 @@ const saveTest = async (action: 'save' | 'continue') => {
               </div>
             </div>
             <div class="col-md-5">
-              <div class="info-box p-2 rounded bg-white border border-emerald">
-                <label class="info-label-small text-emerald fw-bold">Nombre del Chofer / Transportista</label>
+              <div class="info-box p-2 rounded bg-white border-2 border-danger">
+                <label class="info-label-small text-danger fw-bold">Nombre del Chofer / Transportista</label>
                 <input type="text" class="form-control form-control-sm border-0 bg-transparent p-0 fw-bold" 
                        v-model="form.name_provider" placeholder="Escriba el nombre aquí...">
               </div>
@@ -314,7 +314,7 @@ const saveTest = async (action: 'save' | 'continue') => {
 
       <div class="row g-3 mb-4">
         <div class="col-md-7">
-          <div class="card shadow-sm compact-card h-100">
+          <div class="card shadow-sm compact-card h-100 bg-white border-2 border-danger">
             <div class="card-body">
               <label class="form-label small fw-bold text-muted">OBSERVACIONES GENERALES</label>
               <textarea class="form-control form-control-sm" rows="3" v-model="form.observations" placeholder="Escriba aquí cualquier anomalía encontrada..."></textarea>

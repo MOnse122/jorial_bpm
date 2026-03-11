@@ -39,7 +39,7 @@ const form = useForm({
   color_detachment: '',
   result_lote: '',
   result_piece: '',
-  observation: 'Nada',
+  observation: '',
 })
 
 /* ================= COMPUTED ================= */
@@ -122,24 +122,83 @@ const saveInspection = async () => {
     return
   }
   try {
+    form.processing = true;
     await axios.post(
       `/inspection/${props.id_purchase_order}/${props.id_product}`,
       form.data() // <- ¡muy importante!
     )
-    alert('Inspección guardada correctamente')
-  } catch (error: any) {
-    console.error('Error guardando inspección:', error.response?.data || error)
-    console.log(form.data())
-    alert('Error guardando inspección: ' + (error.response?.data?.error || 'Revisa los campos'))
-  }
-  
+    alert('¡Inspección guardada correctamente!');
+    window.location.href = `/mil-std/${props.id_purchase_order}`;
 
-}
+  } catch (error: any) {
+    console.error('Error:', error.response?.data);
+    alert('Error al guardar: ' + (error.response?.data?.error || 'Error de validación'));
+  } finally {
+    form.processing = false;
+  }
+};
 
 /* ================= IR A DASHBOARD ================= */
 const goDashboard = () => {
   window.location.href = `/mil-std/${props.id_purchase_order}`
 }
+
+
+/* ================= RANGOS DE TOLERANCIA (+-10) ================= */
+const rangeWidth = computed(() => ({
+  min: (Number(productInfo.value?.width) || 0) - 10,
+  max: (Number(productInfo.value?.width) || 0) + 10
+}))
+
+const rangeLength = computed(() => ({
+  min: (Number(productInfo.value?.height) || 0) - 10,
+  max: (Number(productInfo.value?.height) || 0) + 10
+}))
+
+const rangeThickness = computed(() => ({
+  min: (Number(productInfo.value?.cal) || 0) - 50,
+  max: (Number(productInfo.value?.cal) || 0) + 50
+}))
+
+
+// Watcher para validar el rango automáticamente
+watch([
+  () => form.width, 
+  () => form.length, 
+  () => form.thickness, 
+  () => form.seal_resistance, 
+  () => form.color_detachment
+], () => {
+  // Solo validamos si los campos obligatorios tienen valor
+  if (form.width && form.length && form.thickness && form.seal_resistance && form.color_detachment) {
+    
+    const w = Number(form.width);
+    const l = Number(form.length);
+    const t = Number(form.thickness);
+
+    // 1. Validar Rangos Numéricos
+    const isSizeError = 
+      w < rangeWidth.value.min || w > rangeWidth.value.max ||
+      l < rangeLength.value.min || l > rangeLength.value.max ||
+      t < rangeThickness.value.min || t > rangeThickness.value.max;
+
+    // 2. Validar Atributos (Selects)
+    // Asumiendo que "No conforme" es lo que detona el rechazo
+    const isQualityError = 
+      form.seal_resistance === 'No conforme' || 
+      form.color_detachment === 'No conforme';
+
+    // 3. Resultado Final (Si falla uno, fallan todos)
+    if (isSizeError || isQualityError) {
+      form.result_lote = 'RECHAZADO';
+      form.result_piece = '3'; // ID de Rechazado
+    } else {
+      form.result_lote = 'APROBADO';
+      form.result_piece = '1'; // ID de Liberado
+    }
+  }
+});
+
 </script>
 
 <template>
@@ -327,43 +386,42 @@ const goDashboard = () => {
 
             <div class="row g-3 mb-4">
 
-              <!-- P1 Ancho -->
-              <div class="col-md-3">
-                <label class="info-label-small">P1. Ancho</label>
-                <input 
-                  type="number" 
-                  step="0.01"
-                  class="form-control form-control-sm"
-                  v-model="form.width"
-                  placeholder="Ej. 90"
-                />
-              </div>
+            <div class="col-md-3">
+              <label class="info-label-small">P1. Ancho (Rango: {{ rangeWidth.min }} - {{ rangeWidth.max }})</label>
+              <input 
+                type="number" 
+                step="0.01"
+                class="form-control form-control-sm"
+                :class="{ 'is-invalid': form.width && (Number(form.width) < rangeWidth.min || Number(form.width) > rangeWidth.max) }"
+                v-model="form.width"
+                placeholder="Ej: 70" 
+              />
+            </div>
 
-              <!-- P1 Largo -->
-              <div class="col-md-3">
-                <label class="info-label-small">P1. Largo</label>
-                <input 
-                  type="number" 
-                  step="0.01"
-                  class="form-control form-control-sm"
-                  v-model="form.length"
-                  placeholder="Ej. 70"
-                />
-              </div>
+            <div class="col-md-3">
+              <label class="info-label-small">P1. Largo (Rango: {{ rangeLength.min }} - {{ rangeLength.max }})</label>
+              <input 
+                type="number" 
+                step="0.01"
+                class="form-control form-control-sm"
+                :class="{ 'is-invalid': form.length && (Number(form.length) < rangeLength.min || Number(form.length) > rangeLength.max) }"
+                v-model="form.length"
+                placeholder="Ej: 100" 
+              />
+            </div>
 
-              <!-- P2 Espesor -->
-              <div class="col-md-3">
-                <label class="info-label-small">P2. Calibre</label>
-                <input 
-                  type="number" 
-                  step="0.01"
-                  class="form-control form-control-sm"
-                  v-model="form.thickness"
-                  placeholder="Ej. 250"
-                />
-              </div>
+            <div class="col-md-3">
+              <label class="info-label-small">P2. Calibre (Rango: {{ rangeThickness.min }} - {{ rangeThickness.max }})</label>
+              <input 
+                type="number" 
+                step="0.01"
+                class="form-control form-control-sm"
+                :class="{ 'is-invalid': form.thickness && (Number(form.thickness) < rangeThickness.min || Number(form.thickness) > rangeThickness.max) }"
+                v-model="form.thickness"
+                placeholder="Ej: 250" 
+              />
+            </div>
 
-              <!-- P3 y P4 siguen siendo SELECT -->
               <div 
                 class="col-md-3" 
                 v-for="(label, key) in {
@@ -384,42 +442,56 @@ const goDashboard = () => {
             </div>
 
             <div class="row g-3 mb-4">
-              <div class="col-md-6">
-                <label class="info-label-small fw-bold">Resultado Final del Lote</label>
-                <select 
-                  class="form-select fw-bold shadow-sm" 
-                  :class="{
-                    'border-success text-success bg-light-success': form.result_lote === 'Aprobado',
-                    'border-danger text-danger bg-light-danger': form.result_lote === 'Rechazado'
-                  }" 
-                  v-model="form.result_lote"
-                >
-                  <option value="">Seleccionar Resultado</option>
-                  <option value="APROBADO">✅ ACEPTADO (DENTRO DE AQL)</option>
-                  <option value="RECHAZADO"> RECHAZADO (FUERA DE LÍMITE)</option>
-                </select>
+              <div class="col-md-7">
+                <div class="card shadow-sm compact-card h-100 bg-white border-2 border-danger">
+                  <div class="card-body">
+                    <label class="form-label small fw-bold text-muted text-uppercase">Observaciones Generales</label>
+                    <textarea 
+                      class="form-control form-control-sm text-uppercase" 
+                      rows="3" 
+                      v-model="form.observation" 
+                      placeholder="Escriba aquí cualquier anomalía encontrada..."
+                    ></textarea>
+                  </div>
+                </div>
               </div>
-              <div class="col-md-6">
-                <label class="info-label-small fw-bold">Disposición del Material</label>
-                <select class="form-select" v-model="form.result_piece">
-                  <option value="">Seleccionar Disposición</option>
-                  <option value="1">Liberado</option>
-                  <option value="2">Retenido</option>
-                  <option value="3">Rechazado</option>
-                  <option value="4">En espera de accion del proveedor</option>
-                </select>
+
+              <div class="col-md-5">
+                <div class="card shadow-sm compact-card h-100 bg-white border-start border-4" 
+                    :class="form.result_lote === 'APROBADO' ? 'border-success' : (form.result_lote === 'RECHAZADO' ? 'border-danger' : 'border-secondary')">
+                  <div class="card-body d-flex flex-column justify-content-between">
+                    
+                    <div>
+                      <label class="info-label-small fw-bold">Resultado Final (Automático)</label>
+                      <div class="p-2 mb-2 bg-light rounded border text-center">
+                        <span class="h5 fw-bold mb-0" :class="form.result_lote === 'APROBADO' ? 'text-success' : 'text-danger'">
+                          {{ form.result_lote || 'PENDIENTE' }}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label class="info-label-small fw-bold">Disposición del Material</label>
+                      <select class="form-select form-select-sm" v-model="form.result_piece">
+                        <option value="">Seleccionar Disposición</option>
+                        <option value="1">Liberado</option>
+                        <option value="2">Retenido</option>
+                        <option value="3">Rechazado</option>
+                        <option value="4">En espera de acción del proveedor</option>
+                      </select>
+                    </div>
+
+                  </div>
+                </div>
               </div>
             </div>
 
             <div class="d-flex justify-content-end gap-2 mt-4">
-              <button class="btn btn-outline-secondary btn-sm px-4" @click="goDashboard">Cancelar</button>
-
-              <button type="button" class="btn btn-outline-danger btn-sm px-3">
-                <i class="bi bi-plus-circle me-1"></i> No Conformidad
-              </button>
+              <button class="btn btn-outline-secondary btn-sm px-4" @click="goDashboard">Cancelar</button>              
               <button 
                 type="button" 
                 @click="saveInspection" 
+                
                 class="btn btn-success px-4 fw-bold" 
                 :disabled="form.processing"
               >

@@ -10,7 +10,6 @@ const props = defineProps({
 })
 
 /* ================== DATOS BASE ================== */
-
 // Soporte si viene como Laravel Resource o objeto directo
 const orderData = computed(() => props.order?.data || props.order)
 const orderId = computed(() => orderData.value?.id_purchase_order)
@@ -28,8 +27,6 @@ const newPlate = ref('')
 
 
 /* ================== FORMULARIO REACTIVO ================== */
-
-
 const form = ref({
   id_purchase_order: orderId.value,
   date: orderData.value?.date ?? '',
@@ -37,8 +34,7 @@ const form = ref({
   id_provider: orderData.value?.provider?.id_provider 
                ?? orderData.value?.id_provider 
                ?? '',
-  plates: orderData.value?.plates?.map(p => p.plate_number) ?? [],
-
+  plates: orderData.value?.plates?.map(p => p.plate_number || p) ?? [],
   products: orderData.value?.details?.map(d => ({
     uid: crypto.randomUUID(),
     title: d.product?.title ?? '',
@@ -113,7 +109,6 @@ const addPlate = () => {
     
   }
 
-  
   newPlate.value = ''
   isAddingNewPlate.value = false
   selectedPlate.value = ''
@@ -158,11 +153,12 @@ const addProduct = (product) => {
     unit_measure: '',
     bulk_or_roll_quantity: 0,
     individual_quantity: 0,
-    document_number: form.value.use_global_document ? form.value.global_doc_number : '',
     document_type: form.value.use_global_document ? form.value.global_doc_type : 'FACTURA',
+    document_number: form.value.use_global_document ? form.value.global_doc_number : '',
+    title: product.title || '',
     non_conformity: false,
     lot: '',
-    num_order: orderId.value,
+    num_order: form.value.num_order,
   })
   allProducts.value = []
   filters.value.search = ''
@@ -194,28 +190,24 @@ const updating = ref(false)
 const updateOrder = (redirect = null) => {
   updating.value = true
 
-  const payload = JSON.parse(JSON.stringify(form.value))
+  // Creamos una copia limpia del formulario
+  const payload = {
+    ...JSON.parse(JSON.stringify(form.value)),
+    // Forzamos que las placas se envíen como el array que has construido
+    plates: form.value.plates 
+  }
 
   router.put(route('purchase-order.update', orderId.value), payload, {
     onSuccess: () => {
       updating.value = false
-
-      if (redirect === 'dashboard') {
-        window.location.href = '/purchase-order'
-      }
-
-      if (redirect === 'view') {
-        router.visit(`/purchase-order`)
-      }
-
-      if (!redirect) {
-        alert('Orden actualizada correctamente')
-      }
+      if (redirect === 'dashboard') window.location.href = '/purchase-order'
+      if (redirect === 'view') router.visit(`/purchase-order`)
+      if (!redirect) alert('Orden actualizada correctamente')
     },
     onError: (errors) => {
       updating.value = false
-      console.error(errors)
-      alert('Error al actualizar la orden')
+      console.error("Errores del servidor:", errors)
+      alert('Error al actualizar: ' + Object.values(errors).flat().join(', '))
     },
   })
 }
@@ -232,8 +224,6 @@ const OrderComplete = computed(() => {
          form.value.products.length > 0 &&
          form.value.products.every(p => p.unit_measure && p.bulk_or_roll_quantity > 0)
 })
-
-
 
 const unitMeasures = [
   { value: 'kg', label: 'Kilogramos' },
@@ -388,7 +378,6 @@ const unitMeasures = [
                 placeholder="Ej. F-123"
                 :class="{'is-valid': form.document_number, 'is-invalid': !form.document_number}"
                 @input="form.document_number = form.document_number.toUpperCase()"
-                @keydown="onlyNumbers"
               >
             </div>
           </div>
@@ -454,19 +443,19 @@ const unitMeasures = [
                   </select>
                 </td>
                 <td>
-                  <input type="number" class="form-control form-control-sm text-center" @focus="onFocus(item, 'bulk_or_roll_quantity')" @keydown="onlyNumbers" v-model="item.bulk_or_roll_quantity" :class="{'is-valid': item.bulk_or_roll_quantity > 0, 'is-invalid': !item.bulk_or_roll_quantity}">
+                  <input type="text" class="form-control form-control-sm text-center" @focus="onFocus(item, 'bulk_or_roll_quantity')" @keydown="onlyNumbers" v-model="item.bulk_or_roll_quantity" :class="{'is-valid': item.bulk_or_roll_quantity > 0, 'is-invalid': !item.bulk_or_roll_quantity}">
                 </td>
                 <td>
-                  <input type="number" class="form-control form-control-sm text-center fw-bold" @focus="onFocus(item, 'individual_quantity')" @keydown="onlyNumbers" v-model="item.individual_quantity" :class="{'is-valid': item.individual_quantity > 0, 'is-invalid': !item.individual_quantity}">
+                  <input type="text" class="form-control form-control-sm text-center" @focus="onFocus(item, 'individual_quantity')" @keydown="onlyNumbers" v-model="item.individual_quantity" :class="{'is-valid': item.individual_quantity > 0, 'is-invalid': !item.individual_quantity}">
                 </td>
                 <td>
-                  <input type="text" class="form-control form-control-sm" placeholder="Ej. 66567" @focus="onFocus(item, 'num_order')" @keydown="onlyNumbers" v-model="item.num_order " :class="{'is-valid': item.num_order, 'is-invalid': !item.num_order}">
+                  <input type="text" class="form-control form-control-sm text-uppercase" placeholder="Ej. 66567" @focus="onFocus(item, 'num_order')" v-model="item.num_order " :class="{'is-valid': item.num_order, 'is-invalid': !item.num_order}">
                 </td>
                 <td>
                   <input type="checkbox" class="form-check-input" v-model="item.non_conformity">
                 </td> 
                 <td>
-                  <input type="text" class="form-control form-control-sm" v-model="item.lot" @keydown="onlyNumbers" placeholder="Ej. 0978688" :class="{'is-valid': item.lot, 'is-invalid': !item.lot}">
+                  <input type="text" class="form-control form-control-sm text-uppercase" v-model="item.lot" placeholder="Ej. 0978688" :class="{'is-valid': item.lot, 'is-invalid': !item.lot}">
                 </td>
 
                 <template v-if="!form.use_global_document">
@@ -477,7 +466,7 @@ const unitMeasures = [
                     </select>
                   </td>
                   <td>
-                    <input type="text" class="form-control form-control-sm" @focus="onFocus(item, 'document_number')" @keydown="onlyNumbers" v-model="item.document_number" :class="{'is-valid': item.document_number, 'is-invalid': !item.document_number} " placeholder="Ej. 9887982">
+                    <input type="text" class="form-control form-control-sm text-uppercase" @focus="onFocus(item, 'document_number')" @keydown="onlyNumbers" v-model="item.document_number" :class="{'is-valid': item.document_number, 'is-invalid': !item.document_number} " placeholder="Ej. 9887982">
                   </td>
                 </template>
                 <td>

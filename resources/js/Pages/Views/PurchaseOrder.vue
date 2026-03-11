@@ -172,7 +172,7 @@ const saveOrder = async () => {
   })
 
   if (!response.ok) {
-    throw new Error('Error al guardar la orden')
+    throw new Error('Error al guardar la orden, revisa que el formulario se haya llenado correctamente')
   }
 
   return await response.json()
@@ -192,7 +192,7 @@ const goTest = async () => {
     window.location.href = `/purchase-order/${id}/test`
 
   } catch (error) {
-    alert('No se pudo guardar la orden')
+    alert('No se pudo guardar la orden. ' + error.message)
   }
 }
 
@@ -204,7 +204,7 @@ const goView = async () => {
     window.location.href = `/purchase-order`
 
   } catch (error) {
-    alert('No se pudo guardar la orden')
+    alert('No se pudo guardar la orden. ' + error.message)
   }
 }
 
@@ -232,6 +232,7 @@ const onlyNumbers = (event) => {
     event.preventDefault();
   }
 };
+
 
 const onFocus = (item, field) => {
   if (item[field] === 0) {
@@ -384,7 +385,6 @@ const onFocus = (item, field) => {
                 placeholder="Ej. F-123"
                 :class="{'is-valid': form.document_number, 'is-invalid': !form.document_number}"
                 @input="form.document_number = form.document_number.toUpperCase()"
-                @keydown="onlyNumbers"
               >
             </div>
           </div>
@@ -450,19 +450,19 @@ const onFocus = (item, field) => {
                   </select>
                 </td>
                 <td>
-                  <input type="number" class="form-control form-control-sm text-center" @focus="onFocus(item, 'bulk_or_roll_quantity')" @keydown="onlyNumbers" v-model="item.bulk_or_roll_quantity" :class="{'is-valid': item.bulk_or_roll_quantity > 0, 'is-invalid': !item.bulk_or_roll_quantity}">
+                  <input type="text" class="form-control form-control-sm" @focus="onFocus(item, 'bulk_or_roll_quantity')" @keydown="onlyNumbers" v-model="item.bulk_or_roll_quantity" :class="{'is-valid': item.bulk_or_roll_quantity > 0, 'is-invalid': !item.bulk_or_roll_quantity}">
                 </td>
                 <td>
-                  <input type="number" class="form-control form-control-sm text-center fw-bold" @focus="onFocus(item, 'individual_quantity')" @keydown="onlyNumbers" v-model="item.individual_quantity" :class="{'is-valid': item.individual_quantity > 0, 'is-invalid': !item.individual_quantity}">
+                  <input type="text" class="form-control form-control-sm " @focus="onFocus(item, 'individual_quantity')" @keydown="onlyNumbers" v-model="item.individual_quantity" :class="{'is-valid': item.individual_quantity > 0, 'is-invalid': !item.individual_quantity}">
                 </td>
                 <td>
-                  <input type="text" class="form-control form-control-sm" placeholder="Ej. 66567" @focus="onFocus(item, 'num_order')" @keydown="onlyNumbers" v-model="item.num_order " :class="{'is-valid': item.num_order, 'is-invalid': !item.num_order}">
+                  <input type="text" class="form-control form-control-sm text-uppercase" placeholder="Ej. 66567" @focus="onFocus(item, 'num_order')" v-model="item.num_order " :class="{'is-valid': item.num_order, 'is-invalid': !item.num_order}">
                 </td>
                 <td>
                   <input type="checkbox" class="form-check-input" v-model="item.non_conformity">
                 </td> 
                 <td>
-                  <input type="text" class="form-control form-control-sm" v-model="item.lot" placeholder="Ej. 0978688" :class="{'is-valid': item.lot, 'is-invalid': !item.lot}">
+                  <input type="text" class="form-control form-control-sm text-uppercase" v-model="item.lot" placeholder="Ej. 0978688" :class="{'is-valid': item.lot, 'is-invalid': !item.lot}">
                 </td>
 
                 <template v-if="!form.use_global_document">

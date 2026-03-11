@@ -39,7 +39,7 @@ class PurchaseOrderController extends Controller
     public function store(Request $request){
         $request->validate([
             'date' => 'required|date',
-            'status' => 'required|in:PENDIENTE,COMPLETADA,CANCELADA,PENDIENTE1,PENDIENTE2',
+            'status' => 'required|in:PENDIENTE,COMPLETADA,CANCELADA,PENDIENTE1',
             'id_provider' => 'required|exists:providers,id_provider',
             'products' => 'required|array|min:1',
             'products.*.id_product' => 'required|exists:products,id_product',
@@ -47,6 +47,8 @@ class PurchaseOrderController extends Controller
             'plates.*' => 'string|min:6|max:10',
             'document_type' => 'nullable|string',
             'document_number' => 'nullable|string',
+            'num_order' => 'nullable|string',
+
         ]);
 
         DB::beginTransaction();
