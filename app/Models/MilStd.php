@@ -4,7 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+
 use App\Models\OrderDetails;
+use App\Models\PurchaseOrder;
 
 class MilStd extends Model
 {
@@ -39,7 +41,17 @@ class MilStd extends Model
     {
         return $this->hasMany(
             LocalSampling::class,
+            'id_mil_std',
             'id_mil_std'
+        );
+    }
+
+    public function purchaseOrder()
+    {
+        return $this->hasMany(
+            PurchaseOrder::class,
+            'id_purchase_order',
+            'id_purchase_order'
         );
     }
 }

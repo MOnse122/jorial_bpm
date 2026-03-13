@@ -18,7 +18,9 @@ class PurchaseOrderController extends Controller
 {
     /**
      * Display a listing of the resource.
+     * 
      */
+   
     public function index(Request $request)
     {
         $purchaseOrders = PurchaseOrder::with('provider')->get();
@@ -32,9 +34,9 @@ class PurchaseOrderController extends Controller
         ]);
     }
     
-
+  
     /**
-     * Show the form for creating a new resource.
+     * Show the form for cr eating a new resource.
      */
     public function store(Request $request){
         $request->validate([

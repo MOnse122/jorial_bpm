@@ -22,7 +22,7 @@ class TestBpmDetail extends Model
     }
 
     //  Relación con criterio
-    public function criterioDetail()
+    public function criterio_detail()
     {
         return $this->belongsTo(CriteriosDetails::class, 'id_criterio_detail');
     }

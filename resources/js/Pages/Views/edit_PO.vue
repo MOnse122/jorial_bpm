@@ -458,6 +458,7 @@ const unitMeasures = [
                   <input type="text" class="form-control form-control-sm text-uppercase" v-model="item.lot" placeholder="Ej. 0978688" :class="{'is-valid': item.lot, 'is-invalid': !item.lot}">
                 </td>
 
+
                 <template v-if="!form.use_global_document">
                   <td>
                     <select class="form-select form-select-sm" v-model="item.document_type">

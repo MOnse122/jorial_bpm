@@ -6,6 +6,7 @@ use App\Http\Controllers\Providers\ProviderController;
 use App\Http\Controllers\PurchaseOrder\PurchaseOrderController;
 use App\Http\Controllers\Products\ProductsController;
 use App\Http\Controllers\TestController;
+use App\Http\Controllers\PurchaseOrderPdfController;
 
 /*
 |--------------------------------------------------------------------------
@@ -47,3 +48,7 @@ Route::apiResource('purchase-order', PurchaseOrderController::class);
 Route::delete('/purchase-order/{id}/', [PurchaseOrderController::class, 'destroy']);
 Route::apiResource('providers', ProviderController::class);
 Route::apiResource('products', ProductsController::class);
+
+
+
+Route::get('/report/{id_purchase_order}', [PurchaseOrderPdfController::class, 'index']);

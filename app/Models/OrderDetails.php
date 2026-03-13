@@ -71,11 +71,19 @@ class OrderDetails extends Model
     
     public function milStd()
     {
-        return $this->hasOne(
+        return $this->belongsTo(
             MilStd::class,
-            'id_order_detail',
-            'id_order_detail'
+            'id_mil_std',
+            'id_mil_std'
         );
     }
 
+    public function localSampling()
+    {
+        return $this->belongsTo(
+            LocalSampling::class,
+            'id_sampling',
+            'id_sampling'
+        );
+    }
 }

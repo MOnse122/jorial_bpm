@@ -56,6 +56,7 @@ Route::get('/check/test', function () {
     return Inertia::render('Views/Test');
 })->name('test');
 
+
 Route::middleware('auth')->group(function () {
     Route::resource('purchase-order', PurchaseOrderController::class);
     Route::get('/order-products/{id}', [TestController::class, 'orderProducts']);    

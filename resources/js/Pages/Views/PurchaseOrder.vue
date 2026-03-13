@@ -162,6 +162,14 @@ const removeProduct = (uid) => {
 
 // ================== GUARDAR ORDEN ==================
 const saveOrder = async () => {
+  // Sincronizar datos globales a cada producto antes de enviar
+  if (form.value.use_global_document) {
+    form.value.products.forEach(p => {
+      p.document_number = form.value.document_number;
+      p.document_type = form.value.document_type;
+    });
+  }
+
   const response = await fetch(`http://localhost:8000/api/purchase-order`, {
     method: 'POST',
     headers: {
@@ -169,13 +177,8 @@ const saveOrder = async () => {
       'Accept': 'application/json'
     },
     body: JSON.stringify(form.value),
-  })
-
-  if (!response.ok) {
-    throw new Error('Error al guardar la orden, revisa que el formulario se haya llenado correctamente')
-  }
-
-  return await response.json()
+  });
+  // ... resto del código
 }
 onMounted(() => {
   fetchProducts()
@@ -184,15 +187,21 @@ onMounted(() => {
 
 const goTest = async () => {
   try {
-    const data = await saveOrder()
-    console.log("RESPUESTA COMPLETA:", data)
+    const response = await saveOrder();
+    console.log("Respuesta del servidor:", response);
 
-    const id = data.data.id_purchase_order
+    // Verificamos si la ID viene dentro de .data o directo en el objeto
+    const id = response.data ? response.data.id_purchase_order : response.id_purchase_order;
 
-    window.location.href = `/purchase-order/${id}/test`
+    if (id) {
+      window.location.href = `/purchase-order/${id}/test`;
+    } else {
+      throw new Error("No se recibió un ID válido de la orden.");
+    }
 
   } catch (error) {
-    alert('No se pudo guardar la orden. ' + error.message)
+    console.error(error);
+    alert('No se pudo guardar la orden: ' + error.message);
   }
 }
 
