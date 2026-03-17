@@ -79,14 +79,6 @@ class PurchaseOrder extends Model
         return $this->hasMany(MilStd::class, 'id_purchase_order', 'id_purchase_order');
     }
 
-    /**
-     * Relationship with Local Sampling
-     */
-/**
- * Si tu columna en la tabla 'local_sampling' se llama diferente
- * (por ejemplo: 'purchase_order_id' o 'id_orden'), cámbiala aquí.
- */
-// En PurchaseOrder.php
     public function local_sampling()
     {
         return $this->hasManyThrough(
@@ -109,5 +101,12 @@ class PurchaseOrder extends Model
             'id_purchase_order',
             'id_product'
         );
+    }
+
+    public function details()
+
+    {
+        
+        return $this->hasMany(OrderDetails::class, 'id_purchase_order', 'id_purchase_order');
     }
 }

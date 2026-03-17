@@ -31,14 +31,9 @@ class CheckBpm extends Model
 
 
 
-    public function user()
+    public function users() 
     {
-        return $this->hasOne(
-            User::class, 
-            'users_id', 
-        );
-        
-    }
+        return $this->belongsTo(User::class, 'users_id', 'id');    }
     // Relación con detalle de evaluación
 
     public function details()

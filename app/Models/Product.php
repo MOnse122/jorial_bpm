@@ -72,7 +72,27 @@ class Product extends Model
         ->withTimestamps();
     }
 
+    public function orderDetails()
+    {
+        return $this->hasMany(OrderDetails::class, 'id_product', 'id_product');
+    }
 
+    public function milStd()
+    {
+        return $this->hasMany(MilStd::class, 'id_product', 'id_product');
+    }
+    public function testBpm()
+    {
+        return $this->hasMany(TestBpm::class, 'id_product', 'id_product');
+    }
+    public function localSampling()
+    {
+        return $this->hasMany(LocalSampling::class, 'id_product', 'id_product');
+    }
 
+    public function details_mil_std()
+    {
+        return $this->hasMany(MilStd::class, 'id_product', 'id_product');
+    }
 
 }

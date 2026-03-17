@@ -43,4 +43,7 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ];
+
+    // En el modelo User.php
+    protected $primaryKey = 'id';
 }

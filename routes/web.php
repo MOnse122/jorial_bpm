@@ -74,4 +74,6 @@ Route::middleware('auth')->group(function () {
     Route::post('/localM/{id_purchase_order}/{id_product}/local-sampling', [MilStdController::class, 'localSampling'])->name('mil-std.local-sampling');
         
 });
+
+Route::get('/ver-reporte/{id_purchase_order}', [TestController::class, 'generarPdf'])->name('ver-reporte');
 require __DIR__.'/auth.php';

@@ -18,6 +18,7 @@ class PurchaseOrderPdfController extends Controller
             'orderDetails',
             'orderDetails.product',
             'orderDetails.plate',
+            'test_bpms.users',
             'mil_stds',
             'local_sampling.mil_std',
             'test_bpms.details.criterio_detail'

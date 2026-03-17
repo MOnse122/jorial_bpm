@@ -14,6 +14,7 @@ class ReportResource extends JsonResource
             'folio'             => $this->folio,
             'date'              => $this->date,
             'status'            => $this->status,
+            'details'           =>$this->details,
 
             'provider' => [
                 'id_provider' => $this->provider->id_provider ?? null,
@@ -37,10 +38,7 @@ class ReportResource extends JsonResource
                     'id_order_detail' => $detail->id_order_detail,
                     'lot'             => $detail->lot,
                     'unit_measure'    => $detail->unit_measure,
-                    'plate'           => $detail->plate ? [
-                        'id_plate'     => $detail->plate->id_plate,
-                        'plate_number' => $detail->plate->plate_number,
-                    ] : null,
+                  
                 ]);
             }),
 
@@ -49,9 +47,20 @@ class ReportResource extends JsonResource
                     'id_test_bpm'   => $test->id_test_bpm,
                     'name_provider' => $test->name_provider,
                     'result'        => $test->result,
+                    
+                    // Acceso al objeto usuario
+                    'user' => $test->users ? [
+                        'id'   => $test->users->id, // Usamos 'id' de la tabla users
+                        'name' => $test->users->name,
+                    ] : null,
+                        
+                    'percentage'    => $test->percentage,
+                    'observations'  => $test-> observations,
                     'details'       => $test->details->map(fn($d) => [
                         'score'  => $d->score,
                         'sector' => $d->criterio_detail->sector ?? null,
+
+         
                     ]),
                 ]);
             }),

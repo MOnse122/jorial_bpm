@@ -9,6 +9,9 @@ use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
 use App\Models\CriteriosDetails;
 use App\Models\PurchaseOrder;
+use Barryvdh\DomPDF\Facade\Pdf;
+use App\Http\Resources\ReportResource;
+use Illuminate\Support\Facades\Storage;
 
 
 class TestController extends Controller
@@ -160,8 +163,25 @@ class TestController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+
+// En TestController.php
+    public function generarPdf($id)
     {
-        //
+        // Debemos usar los nombres EXACTOS de las funciones en tu modelo
+        $registro = PurchaseOrder::with([
+            'provider',
+            'orderDetails.plate',  // <--- El Resource usa whenLoaded('orderDetails')
+            'orderDetails.product',
+            'test_bpms.details',   // <--- El Resource usa whenLoaded('test_bpms')
+            'mil_stds.samplings'
+        ])->findOrFail($id);
+
+        // Al resolver, el Resource verá que 'orderDetails' SI está cargado
+        // y la llave 'details' aparecerá en el array final.
+        $data = (new ReportResource($registro))->resolve();
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('reportes.reporte', compact('data'));
+        
+        return $pdf->stream("Reporte_{$data['folio']}.pdf");
     }
 }
