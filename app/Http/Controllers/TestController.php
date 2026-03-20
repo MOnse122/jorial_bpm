@@ -102,11 +102,6 @@ class TestController extends Controller
                     'status' => $request->status ?? 'PENDIENTE1'
                 ]);
             }
-            
-         
-
-            
-
 
             // 🔹 Guardar detalles usando modelo
             foreach ($request->details as $detail) {
@@ -174,14 +169,39 @@ class TestController extends Controller
             'orderDetails.product',
             'test_bpms.details',   // <--- El Resource usa whenLoaded('test_bpms')
             'mil_stds.samplings'
+            
         ])->findOrFail($id);
 
-        // Al resolver, el Resource verá que 'orderDetails' SI está cargado
-        // y la llave 'details' aparecerá en el array final.
+
         $data = (new ReportResource($registro))->resolve();
 
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('reportes.reporte', compact('data'));
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('reportes.reporte', compact('data'))
+        ->setPaper('A4')
+        ->setOptions([
+            'isRemoteEnabled' => true,
+            'dpi' => 95,
+            'chroot' => public_path(),
+            'imageQuality' => 5
+        ]);
         
         return $pdf->stream("Reporte_{$data['folio']}.pdf");
+    }
+
+    public function pdfMuestreo($id)
+    {
+        $registro = PurchaseOrder::with([
+            'provider',
+            'orderDetails.plate',
+            'orderDetails.product',
+            'test_bpms.users',
+            'test_bpms.details.criterio_detail',
+            'mil_stds.samplings'
+        ])->findOrFail($id);
+
+        $data = (new ReportResource($registro))->resolve();
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('reportes.muestreo', compact('data'));
+        
+        return $pdf->stream("Reporte_" . ($data['folio'] ?? 'Sin_Folio') . ".pdf");
     }
 }

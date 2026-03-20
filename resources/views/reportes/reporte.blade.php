@@ -2,10 +2,9 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+        <title>BPM {{ $data['folio'] }}</title>
     <style>
-        /* Optimizaciones para PDF */
         @page { 
-            /* Aumentamos el margen inferior de la hoja para dejarle espacio al footer */
             margin: 1cm 1.2cm 2cm 1.2cm; 
         }
 
@@ -20,11 +19,10 @@
 
         #watermark {
             position: fixed;
-            top: 10%;
-            left: 10%;
+            top: 0%;
+            left: 0%;
             width: 80%;
-            opacity: 0.1;
-            z-index: -1000;
+            opacity: .15;
         }
 /* Estilos sugeridos para acompañar el HTML */
         .header-table { 
@@ -34,7 +32,7 @@
         }
 
         .logo-cell {
-            width: 30%;
+            width: 50%;
             vertical-align: bottom; /* Alineado a la base de la línea verde */
             padding-bottom: 5px;
         }
@@ -242,24 +240,24 @@
 <body>
 
 <div id="watermark">
-    <img src="/public/images/jorial.png" style="width: 100%;">    
+    <img src="{{ public_path('images/jorial.jpg') }}" >
 </div>
 
-<table class="header-table">
+<table class="header-table"> 
     <tr>
         <td class="logo-cell">
-            <img src="/public/images/logo (1).png" style="width: 100%;">     
+            <img src="{{ public_path('images/logo.jpg') }}" style="width: 120px;">
         </td>
         <td class="title-cell">     
             <h1 class="title-main">Check-in BPM Proveedor</h1>
-            <div class="subtitle">Sistema de Gestión de Calidad | Registro RE-ADM-4.1.2</div>
+            <div class="subtitle">Sistema de Gestión de Calidad</div>
         </td>
     </tr>
 </table>
 
 <table class="info-grid">
     <tr>
-        <td class="info-label">Fecha de Auditoría</td>
+        <td class="info-label">Fecha de orden</td>
         <td class="info-value">{{ isset($data['date']) ? date('d/m/Y', strtotime($data['date'])) : 'N/A' }}</td>
         <td class="info-label">Folio Interno</td>
         <td class="info-value" style="font-weight: bold; color: #059669;">{{ $data['folio'] ?? 'N/A' }}</td>
@@ -331,12 +329,7 @@
             <div style="font-weight: bold;">{{ $test['user']['name'] ?? 'Auditor Responsable' }}</div>
             <div style="color: #64748b; font-size: 8px;">Firma de Conformidad - Jorial</div>
         </td>
-        <td style="width: 10%;"></td>
-        <td class="sig-box">
-            <div class="sig-line"></div>
-            <div style="font-weight: bold;">{{ $test['name_provider'] ?? 'Representante Proveedor' }}</div>
-            <div style="color: #64748b; font-size: 8px;">Firma de Operador / Proveedor</div>
-        </td>
+       
     </tr>
 </table>
 

@@ -28,7 +28,7 @@ class LocalSampling extends Model
         
     ];
 
-    public function milStd()
+    public function mil_std()
     {
         return $this->belongsTo(
             MilStd::class,

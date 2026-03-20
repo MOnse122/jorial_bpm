@@ -50,7 +50,7 @@ class ReportResource extends JsonResource
                     
                     // Acceso al objeto usuario
                     'user' => $test->users ? [
-                        'id'   => $test->users->id, // Usamos 'id' de la tabla users
+                        'id'   => $test->users->id, 
                         'name' => $test->users->name,
                     ] : null,
                         
@@ -60,48 +60,61 @@ class ReportResource extends JsonResource
                         'score'  => $d->score,
                         'sector' => $d->criterio_detail->sector ?? null,
 
-         
                     ]),
                 ]);
             }),
 
             'products' => $this->whenLoaded('orderDetails', function () {
                 return $this->orderDetails
-                    ->pluck('product')
-                    ->filter()
-                    ->unique('id_product')
-                    ->values()
-                    ->map(fn($product) => [
-                        'id_product' => $product->id_product,
-                        'title'      => $product->title,
-                        'code'       => $product->code,
+                    ->map(function ($detail) {
 
-                        // Extraemos MIL STD de la relación de la orden
-                        'details_mil_std' => $this->mil_stds->where('id_product', $product->id_product)->first() ? [
-                            'id_mil_std'       => $this->mil_stds->first()->id_mil_std,
-                            'id_purchase_order' => $this->mil_stds->first()->id_purchase_order,
-                            'id_product'        => $this->mil_stds->first()->id_product,
-                            'c1'               => $this->mil_stds->first()->c1,
-                            'c2'               => $this->mil_stds->first()->c2,
-                            'c3'               => $this->mil_stds->first()->c3,
-                            'inspection_level' => $this->mil_stds->first()->inspection_level,
-                            'sample_size'      => $this->mil_stds->first()->sample_size,
-                            'sample_acept'     => $this->mil_stds->first()->sample_acept,
-                            'sample_reject'    => $this->mil_stds->first()->sample_reject,
-                            'aql'              => $this->mil_stds->first()->aql,
+                        $product = $detail->product;
 
-                            'samplings' => $this->mil_stds->first()->samplings->map(fn($sampling) => [
-                                'id_sampling' => $sampling->id_sampling,
-                                'width' => $sampling->width,
-                                'length' => $sampling->length,
-                                'thickness' => $sampling->thickness,
-                                'seal_resistance' => $sampling->seal_resistance,
-                                'color_detachment' => $sampling->color_detachment,
-                            ]),
-                        ] : null,
+                        if (!$product) return null;
 
+                        $milStd = $this->mil_stds
+                            ->where('id_product', $product->id_product)
+                            ->first();
 
-                    ]);
+                        return [
+                            'id_product' => $product->id_product,
+                            'title'      => $product->title,
+                            'code'       => $product->code,
+                            'width'      => $product->width,
+                            'height'     => $product->height,
+                            'cal'        => $product->cal,
+
+                            // 🔥 AQUÍ YA FUNCIONA EL LOTE
+                            'lot' => $detail->lot,
+                            'unit_measure' => $detail->unit_measure,
+
+                            'details_mil_std' => $milStd ? [
+                                'id_mil_std'        => $milStd->id_mil_std,
+                                'id_purchase_order' => $milStd->id_purchase_order,
+                                'id_product'        => $milStd->id_product,
+                                
+                                'c1'               => $milStd->c1,
+                                'c2'               => $milStd->c2,
+                                'c3'               => $milStd->c3,
+                                'inspection_level' => $milStd->inspection_level,
+                                'sample_size'      => $milStd->sample_size,
+                                'sample_acept'     => $milStd->sample_acept,
+                                'sample_reject'    => $milStd->sample_reject,
+                                'aql'              => $milStd->aql,
+
+                                'samplings' => $milStd->samplings->map(fn($sampling) => [
+                                    'id_sampling'      => $sampling->id_sampling,
+                                    'width'            => $sampling->width,
+                                    'length'           => $sampling->length,
+                                    'thickness'        => $sampling->thickness,
+                                    'seal_resistance'  => $sampling->seal_resistance,
+                                    'color_detachment' => $sampling->color_detachment,
+                                ]),
+                            ] : null,
+                        ];
+                    })
+                    ->filter() // quita nulls
+                    ->values();
             }),
 
             

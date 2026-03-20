@@ -76,4 +76,7 @@ Route::middleware('auth')->group(function () {
 });
 
 Route::get('/ver-reporte/{id_purchase_order}', [TestController::class, 'generarPdf'])->name('ver-reporte');
+Route::get('/muestreo/{id_purchase_order}', [TestController::class, 'pdfMuestreo'])->name('muestreo');
+
+
 require __DIR__.'/auth.php';
